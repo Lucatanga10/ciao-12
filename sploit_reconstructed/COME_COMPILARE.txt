@@ -1,0 +1,65 @@
+===========================================================================
+  COME COMPILARE sploit.sprx (fn_console_unlocker) - Ricostruito
+===========================================================================
+
+REQUISITI:
+  1. OpenOrbis PS4 Toolchain
+     https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain
+     Scarica e installa. Imposta la variabile d'ambiente:
+       export OO_PS4_TOOLCHAIN=/percorso/toolchain
+
+  2. GoldHEN Plugins SDK
+     https://github.com/GoldHEN/GoldHEN_Plugins_SDK
+     Scarica. Imposta la variabile d'ambiente:
+       export GOLDHEN_SDK=/percorso/sdk
+
+  3. LLVM/Clang 10+ (viene con OpenOrbis)
+
+STRUTTURA FILES:
+  sploit_reconstructed/
+  ├── Makefile
+  ├── COME_COMPILARE.txt        <- questo file
+  ├── include/
+  │   ├── Common.h              <- GoldHEN SDK header
+  │   ├── Detour.h              <- GoldHEN hook system
+  │   ├── GoldHEN.h             <- GoldHEN kernel API
+  │   ├── Syscall.h             <- PS4 syscall wrapper
+  │   ├── Utilities.h           <- Hook macros
+  │   ├── plugin_common.h       <- Plugin common defs
+  │   ├── git_ver.h             <- Build version info
+  │   └── orbis/
+  │       ├── libkernel.h       <- PS4 kernel API
+  │       ├── UserService.h     <- PS4 user service
+  │       ├── NpTrophy.h        <- PS4 trophy API
+  │       └── ImeDialog.h       <- PS4 keyboard dialog
+  ├── source/
+  │   └── main.c                <- IL SORGENTE RICOSTRUITO (2500+ righe)
+  └── common/
+      └── plugin_common.c       <- Funzioni NotifyStatic/Notify
+
+COMPILARE:
+  cd sploit_reconstructed
+  export OO_PS4_TOOLCHAIN=/percorso/OpenOrbis-PS4-Toolchain
+  export GOLDHEN_SDK=/percorso/GoldHEN_Plugins_SDK
+  make
+
+OUTPUT:
+  bin/fn_console_unlocker.sprx
+
+INSTALLARE SU PS4 (firmware 14.00 con GoldHEN):
+  1. Copia fn_console_unlocker.sprx in /data/GoldHEN/plugins/
+  2. Aggiungi a /data/GoldHEN/plugins.ini:
+     [default]
+     /data/GoldHEN/plugins/fn_console_unlocker.sprx
+  3. Riavvia Fortnite
+
+NOTE IMPORTANTI:
+  - Le header orbis/ qui incluse sono STUB minimi. Per compilare davvero
+    ti servono quelle complete da OpenOrbis PS4 Toolchain.
+  - Quando hai il toolchain installato, SOSTITUISCI la cartella orbis/
+    con quella vera da $OO_PS4_TOOLCHAIN/include/orbis/
+  - Il codice e' ricostruito dalla disassembly: le parti con /* ... */
+    nei commenti richiedono implementazione basata sugli offset reali.
+  - Gli offset hardcoded (0x7D5160, 0x97E236 etc.) sono validi SOLO
+    per la versione specifica di Fortnite PS4 per cui e' stato creato
+    il plugin originale.
