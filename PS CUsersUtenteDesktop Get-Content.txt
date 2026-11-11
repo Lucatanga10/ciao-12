@@ -1,0 +1,4527 @@
+PS C:\Users\Utente\Desktop> Get-Content "C:\Users\Utente\Desktop\il2cpp_dump\DiffableCs\Assembly-CSharp\SROptions.cs" > C:\Users\Utente\Desktop\sroptions.txt
+PS C:\Users\Utente\Desktop> Get-Content "C:\Users\Utente\Desktop\il2cpp_dump\DiffableCs\Assembly-CSharp\Services\Game\GameplayConfigsProviderService.cs" >> C:\Users\Utente\Desktop\sroptions.txt
+PS C:\Users\Utente\Desktop> Get-Content "C:\Users\Utente\Desktop\il2cpp_dump\DiffableCs\Assembly-CSharp\UI\Windows\GameScoreView.cs" >> C:\Users\Utente\Desktop\sroptions.txt
+PS C:\Users\Utente\Desktop> Get-Content "C:\Users\Utente\Desktop\il2cpp_dump\DiffableCs\Assembly-CSharp\Systems\Game\GameplayStateData.cs" >> C:\Users\Utente\Desktop\sroptions.txt
+PS C:\Users\Utente\Desktop> Get-Content "C:\Users\Utente\Desktop\il2cpp_dump\DiffableCs\Assembly-CSharp\Systems\Game\ThrowResult.cs" >> C:\Users\Utente\Desktop\sroptions.txt
+PS C:\Users\Utente\Desktop> Get-Content C:\Users\Utente\Desktop\sroptions.txt
+//Type is in global namespace
+
+[Preserve]
+public class SROptions : INotifyPropertyChanged
+{
+        [CompilerGenerated]
+        private sealed class <>c
+        {
+                public static readonly <>c <>9; //Field offset: 0x0
+                public static Action<Boolean, Object> <>9__15_0; //Field offset: 0x8
+                public static Action<Boolean, Object> <>9__16_0; //Field offset: 0x10
+                public static Action<Boolean, Object> <>9__51_0; //Field offset: 0x18
+                public static Action<Boolean, List`1<RewardData>> <>9__59_0; //Field offset: 0x20
+                public static Action<Boolean, Object> <>9__135_0; //Field offset: 0x28
+                public static Action<Boolean, Object> <>9__136_0; //Field offset: 0x30
+                public static Action<Boolean, Object> <>9__137_0; //Field offset: 0x38
+                public static Func<DailyMissionsSlotData, Boolean> <>9__138_0; //Field offset: 0x40
+                public static Action<Boolean, Object> <>9__138_2; //Field offset: 0x48
+                public static Action<Boolean, Object> <>9__139_0; //Field offset: 0x50
+                public static Action<Boolean, Object> <>9__140_0; //Field offset: 0x58
+                public static Action<Boolean, Object> <>9__145_0; //Field offset: 0x60
+                public static Action<Boolean, Object> <>9__150_0; //Field offset: 0x68
+                public static Action <>9__159_0; //Field offset: 0x70
+                public static Action <>9__159_1; //Field offset: 0x78
+                public static Action<Boolean, Object> <>9__169_0; //Field offset: 0x80
+                public static Action<Boolean, Object> <>9__170_0; //Field offset: 0x88
+                public static Action<Boolean, Object> <>9__171_0; //Field offset: 0x90
+                public static Action<Boolean, Object> <>9__172_0; //Field offset: 0x98
+                public static Action<Boolean, Object> <>9__173_0; //Field offset: 0xA0
+                public static Action<Boolean, Object> <>9__174_0; //Field offset: 0xA8
+                public static Action<Boolean, Object> <>9__175_0; //Field offset: 0xB0
+                public static Action<Boolean, Object> <>9__176_0; //Field offset: 0xB8
+                public static Action<Boolean, Object> <>9__177_0; //Field offset: 0xC0
+                public static Action<Boolean, Object> <>9__178_0; //Field offset: 0xC8
+                public static Action<Boolean, Object> <>9__180_0; //Field offset: 0xD0
+                public static Action<Boolean> <>9__254_0; //Field offset: 0xD8
+                public static Action<Boolean> <>9__255_0; //Field offset: 0xE0
+                public static Action<Boolean> <>9__260_0; //Field offset: 0xE8
+                public static Action<Boolean> <>9__261_0; //Field offset: 0xF0
+                public static Action<Boolean> <>9__264_0; //Field offset: 0xF8
+                public static Action<Boolean, List`1<RewardData>> <>9__265_0; //Field offset: 0x100
+                public static Action<Boolean, Object> <>9__337_0; //Field offset: 0x108
+                public static Action<Boolean, Object> <>9__338_0; //Field offset: 0x110
+                public static Action<Boolean, Object> <>9__339_0; //Field offset: 0x118
+                public static Action<Boolean, Object> <>9__340_0; //Field offset: 0x120
+                public static Action<Boolean, Object> <>9__341_0; //Field offset: 0x128
+                public static Action<Boolean, Object> <>9__342_0; //Field offset: 0x130
+                public static Action<Boolean, Object> <>9__343_0; //Field offset: 0x138
+                public static Action<Boolean, Object> <>9__344_0; //Field offset: 0x140
+                public static Action<Boolean, Object> <>9__345_0; //Field offset: 0x148
+                public static Action<Boolean, Object> <>9__346_0; //Field offset: 0x150
+                public static Action<Boolean, Object> <>9__347_0; //Field offset: 0x158
+                public static Action<Boolean, Object> <>9__348_0; //Field offset: 0x160
+                public static Action<Boolean, Object> <>9__349_0; //Field offset: 0x168
+                public static Action<Boolean, Object> <>9__350_0; //Field offset: 0x170
+                public static Action<Boolean, Object> <>9__351_0; //Field offset: 0x178
+                public static Action<Boolean, Object> <>9__352_0; //Field offset: 0x180
+                public static Action<Boolean, Object> <>9__353_0; //Field offset: 0x188
+                public static Action<Boolean, Object> <>9__354_0; //Field offset: 0x190
+                public static Action<Boolean, Object> <>9__355_0; //Field offset: 0x198
+                public static Action<Boolean, Object> <>9__356_0; //Field offset: 0x1A0
+                public static Action<Boolean, Object> <>9__357_0; //Field offset: 0x1A8
+                public static Action<Boolean, Object> <>9__358_0; //Field offset: 0x1B0
+                public static Action<Boolean, Object> <>9__359_0; //Field offset: 0x1B8
+                public static Action<Boolean, Object> <>9__360_0; //Field offset: 0x1C0
+                public static Action<Boolean, Object> <>9__361_0; //Field offset: 0x1C8
+                public static Action<Boolean, Object> <>9__362_0; //Field offset: 0x1D0
+                public static Action<Boolean, Object> <>9__363_0; //Field offset: 0x1D8
+                public static Action<Boolean, Object> <>9__364_0; //Field offset: 0x1E0
+                public static Action<Boolean, Object> <>9__365_0; //Field offset: 0x1E8
+                public static Action<Boolean, Object> <>9__366_0; //Field offset: 0x1F0
+                public static Action<Boolean, Object> <>9__367_0; //Field offset: 0x1F8
+                public static Action<Boolean, Object> <>9__368_0; //Field offset: 0x200
+                public static Action<Boolean, Object> <>9__369_0; //Field offset: 0x208
+                public static Action<Boolean, Object> <>9__370_0; //Field offset: 0x210
+                public static Action<Boolean, Object> <>9__371_0; //Field offset: 0x218
+                public static Action<Boolean, Object> <>9__385_0; //Field offset: 0x220
+                public static Action<Boolean, Object> <>9__386_0; //Field offset: 0x228
+                public static Action<Boolean, Object> <>9__387_0; //Field offset: 0x230
+                public static Action<Boolean, Object> <>9__388_0; //Field offset: 0x238
+                public static Action<Object, Object> <>9__389_0; //Field offset: 0x240
+                public static Action<Boolean, Object> <>9__390_0; //Field offset: 0x248
+                public static Action<Boolean, Object> <>9__433_0; //Field offset: 0x250
+                public static Action<Boolean, Object> <>9__434_0; //Field offset: 0x258
+                public static Action<Boolean, Object> <>9__440_0; //Field offset: 0x260
+                public static Action<Boolean, Object> <>9__442_0; //Field offset: 0x268
+                public static Action<Boolean, Object> <>9__443_0; //Field offset: 0x270
+                public static Action<Boolean, Object> <>9__444_0; //Field offset: 0x278
+                public static Action<Boolean, Object> <>9__447_0; //Field offset: 0x280
+                public static Action<Boolean, Object> <>9__453_0; //Field offset: 0x288
+                public static Action<Boolean, Object> <>9__455_0; //Field offset: 0x290
+                public static Action<Boolean, Object> <>9__460_0; //Field offset: 0x298
+                public static Action<Boolean, Object> <>9__461_0; //Field offset: 0x2A0
+                public static Action<Boolean, Object> <>9__462_0; //Field offset: 0x2A8
+                public static Action<Boolean, Object> <>9__463_0; //Field offset: 0x2B0
+                public static Action<Boolean, Object> <>9__464_0; //Field offset: 0x2B8
+                public static Action<Boolean, Object> <>9__465_0; //Field offset: 0x2C0
+                public static Action<Boolean, Object> <>9__498_0; //Field offset: 0x2C8
+                public static Action<Boolean, Object> <>9__540_0; //Field offset: 0x2D0
+                public static Action<Boolean, Object> <>9__543_0; //Field offset: 0x2D8
+                public static Action<Boolean, Object> <>9__544_0; //Field offset: 0x2E0
+                public static Action<Boolean, Object> <>9__553_0; //Field offset: 0x2E8
+                public static Action<Boolean, Object> <>9__554_0; //Field offset: 0x2F0
+                public static Action<Boolean, Object> <>9__566_0; //Field offset: 0x2F8
+                public static Action<Boolean, Object> <>9__569_0; //Field offset: 0x300
+                public static Action<Boolean, Object> <>9__570_0; //Field offset: 0x308
+                public static Action<Boolean, Object> <>9__574_0; //Field offset: 0x310
+                public static Action<Boolean, Object> <>9__583_0; //Field offset: 0x318
+                public static Action<Boolean, Object> <>9__597_0; //Field offset: 0x320
+                public static Action<Boolean, Object> <>9__598_0; //Field offset: 0x328
+                public static Action<Boolean, Object> <>9__600_0; //Field offset: 0x330
+                public static Action<Boolean, Object> <>9__606_0; //Field offset: 0x338
+                public static Action<Boolean, Object> <>9__615_0; //Field offset: 0x340
+                public static Action<Boolean> <>9__620_0; //Field offset: 0x348
+                public static Action<Boolean> <>9__623_0; //Field offset: 0x350
+                public static Action<Boolean, List`1<RewardData>> <>9__624_0; //Field offset: 0x358
+                public static TweenCallback <>9__737_0; //Field offset: 0x360
+                public static Action<Boolean, Object> <>9__824_0; //Field offset: 0x368
+                public static Action<Boolean, Object> <>9__825_0; //Field offset: 0x370
+                public static Action<Boolean, Object> <>9__826_0; //Field offset: 0x378
+                public static Action<Boolean> <>9__872_0; //Field offset: 0x380
+                public static Action<Boolean, Object> <>9__893_0; //Field offset: 0x388
+
+                private static <>c() { }
+
+                public <>c() { }
+
+                internal void <AcceptFriendInvite>b__172_0(bool success, object o) { }
+
+                internal void <AcceptFriendInviteAsAnyUser>b__177_0(bool success, object o) { }
+
+                internal void <AcceptGuildInvite>b__340_0(bool success, object o) { }
+
+                internal void <AcceptGuildInviteAsAnyUser>b__359_0(bool success, object o) { }
+
+                internal void <AcceptGuildJoinRequest>b__345_0(bool success, object o) { }
+
+                internal void <AcceptGuildJoinRequestAsAnyUser>b__364_0(bool success, object o) { }
+
+                internal void <AddPremiumTokens>b__461_0(bool success, object o) { }
+
+                internal void <AddTickets>b__597_0(bool b, object o) { }
+
+                internal void <AddTokens>b__460_0(bool success, object o) { }
+
+                internal void <CancelFriendInvite>b__170_0(bool success, object o) { }
+
+                internal void <CancelFriendInviteAsAnyUser>b__175_0(bool success, object o) { }
+
+                internal void <CancelGuildInvite>b__339_0(bool success, object o) { }
+
+                internal void <CancelGuildInviteAsAnyUser>b__358_0(bool success, object o) { }
+
+                internal void <CancelGuildJoinRequest>b__343_0(bool success, object o) { }
+
+                internal void <CancelGuildJoinRequestAsAnyUser>b__362_0(bool success, object o) { }
+
+                internal void <ChangeCurrency>b__135_0(bool success, object o) { }
+
+                internal void <ChangeMemberRole>b__352_0(bool success, object o) { }
+
+                internal void <ChangeMemberRoleAsAnyUser>b__368_0(bool success, object o) { }
+
+                internal void <ClearBoughtOffers>b__498_0(bool success, object result) { }
+
+                internal void <CollectDailyReward>b__139_0(bool success, object o) { }
+
+                internal void <CollectReward>b__455_0(bool success, object o) { }
+
+                internal void <CompleteAchievementWithId>b__16_0(bool success, object o) { }
+
+                internal void <CreateGuild>b__347_0(bool success, object o) { }
+
+                internal void <CreateGuildAsAnyUser>b__366_0(bool success, object o) { }
+
+                internal void <CreateGuilds>b__385_0(bool success, object o) { }
+
+                internal void <DailyMissionResetUserData>b__136_0(bool success, object o) { }
+
+                internal void <DebugGetStandardFashionChest>b__824_0(bool b, object o) { }
+
+                internal void <DebugMysteryRewardsReset>b__465_0(bool b, object o) { }
+
+                internal void <DebugSpecialEventsResetServerData>b__600_0(bool b, object o) { }
+
+                internal void <DeleteGuildMessage>b__355_0(bool success, object o) { }
+
+                internal void <DeleteGuildMessageAsAnyUser>b__371_0(bool success, object o) { }
+
+                internal void <ForceLastLoginDaysAgo>b__150_0(bool success, object o) { }
+
+                internal void <ForceRefreshSkillshot>b__574_0(bool success, object dataObj) { }
+
+                internal void <ForceResetSoon>b__462_0(bool success, object o) { }
+
+                internal void <ForceSkipTutorial>b__737_0() { }
+
+                internal void <FullSpamInbox>b__444_0(bool success, object o) { }
+
+                internal void <GetGuildGlobalLeaderboard>b__350_0(bool success, object o) { }
+
+                internal void <GetGuildList>b__349_0(bool success, object o) { }
+
+                internal void <GetGuildLocalLeaderboard>b__351_0(bool success, object o) { }
+
+                internal void <GuildsForceNextLeague>b__389_0(object success, object o) { }
+
+                internal void <GuildsForceReportGuildsLeagueEndShown>b__390_0(bool success, object o) { }
+
+                internal void <GuildsReportGuildsLeagueEndShown>b__388_0(bool success, object o) { }
+
+                internal void <InboxClaimReward>b__440_0(bool success, object o) { }
+
+                internal void <IncreaseReferralsLevel>b__570_0(bool success, object response) { }
+
+                internal void <JoinGuild>b__337_0(bool success, object o) { }
+
+                internal void <LeaveGuild>b__346_0(bool success, object o) { }
+
+                internal void <LeaveGuildAsAnyUser>b__365_0(bool success, object o) { }
+
+                internal void <MarkAllMessagesAsRead>b__434_0(bool success, object o) { }
+
+                internal void <MarkChatAsRead>b__433_0(bool success, object o) { }
+
+                internal void <MysteryRewardsCancelReward>b__464_0(bool b, object o) { }
+
+                internal void <MysteryRewardsGetReward>b__463_0(bool b, object o) { }
+
+                internal void <ParametersAccept>b__544_0(bool b, object o) { }
+
+                internal void <PlayerParamSet>b__540_0(bool b, object o) { }
+
+                internal void <PopulateGuilds>b__386_0(bool success, object o) { }
+
+                internal void <PopulateGuildsLeague>b__387_0(bool success, object o) { }
+
+                internal void <RejectFriendInvite>b__171_0(bool success, object o) { }
+
+                internal void <RejectFriendInviteAsAnyUser>b__176_0(bool success, object o) { }
+
+                internal void <RejectGuildInvite>b__341_0(bool success, object o) { }
+
+                internal void <RejectGuildInviteAsAnyUser>b__360_0(bool success, object o) { }
+
+                internal void <RejectGuildJoinRequest>b__344_0(bool success, object o) { }
+
+                internal void <RejectGuildJoinRequestAsAnyUser>b__363_0(bool success, object o) { }
+
+                internal void <RemoveFriend>b__173_0(bool success, object o) { }
+
+                internal void <RemoveFriendAsAnyUser>b__178_0(bool success, object o) { }
+
+                internal void <RemoveMember>b__353_0(bool success, object o) { }
+
+                internal void <RemoveMemberAsAnyUser>b__369_0(bool success, object o) { }
+
+                internal bool <RerollPremiumMission>b__138_0(DailyMissionsSlotData x) { }
+
+                internal void <RerollPremiumMission>b__138_2(bool success, object o) { }
+
+                internal void <ResetAchievementsUserData>b__15_0(bool success, object o) { }
+
+                internal void <ResetAvailableRefills>b__137_0(bool success, object o) { }
+
+                internal void <ResetClaimedDailyRewards>b__255_0(bool x) { }
+
+                internal void <ResetDailyRewardsUserData>b__140_0(bool success, object o) { }
+
+                internal void <ResetFriendsUserData>b__180_0(bool success, object o) { }
+
+                internal void <ResetGuildsUserData>b__356_0(bool success, object o) { }
+
+                internal void <ResetInboxUserData>b__447_0(bool success, object o) { }
+
+                internal void <ResetReferralsUserData>b__569_0(bool success, object response) { }
+
+                internal void <ResetSocialIncentivesUserData>b__583_0(bool success, object o) { }
+
+                internal void <ResetSpecialOffersUserData>b__606_0(bool success, object o) { }
+
+                internal void <ResetUserData>b__453_0(bool success, object o) { }
+
+                internal void <RewindActivation24H>b__261_0(bool x) { }
+
+                internal void <RewindActivationMinutes>b__260_0(bool x) { }
+
+                internal void <SendChatMessageAsAnyUser>b__442_0(bool success, object o) { }
+
+                internal void <SendFriendInvite>b__169_0(bool success, object o) { }
+
+                internal void <SendFriendInviteAsAnyUser>b__174_0(bool success, object o) { }
+
+                internal void <SendGuildInvite>b__338_0(bool success, object o) { }
+
+                internal void <SendGuildInviteAsAnyUser>b__357_0(bool success, object o) { }
+
+                internal void <SendGuildJoinRequest>b__342_0(bool success, object o) { }
+
+                internal void <SendGuildJoinRequestAsAnyUser>b__361_0(bool success, object o) { }
+
+                internal void <SendGuildMessage>b__354_0(bool success, object o) { }
+
+                internal void <SendGuildMessageAsAnyUser>b__370_0(bool success, object o) { }
+
+                internal void <set_BodySize>b__543_0(bool b, object o) { }
+
+                internal void <SetActiveNicknamePresetId>b__553_0(bool success, object response) { }
+
+                internal void <SetAvailableNicknamePresetIds>b__554_0(bool success, object response) { }
+
+                internal void <SetDayStreak>b__145_0(bool b, object o) { }
+
+                internal void <SetWantedTrophies>b__566_0(bool success, object response) { }
+
+                internal void <ShowInterstitialOfferWnd>b__872_0(bool purchased) { }
+
+                internal void <ShowVictoryChest>b__159_0() { }
+
+                internal void <ShowVictoryChest>b__159_1() { }
+
+                internal void <SpamInbox>b__443_0(bool success, object o) { }
+
+                internal void <SpecialOffersSetAsSeen>b__615_0(bool success, object o) { }
+
+                internal void <StartGemsSubscription>b__264_0(bool _) { }
+
+                internal void <StartSubscription>b__623_0(bool _) { }
+
+                internal void <StopGemsSubscription>b__254_0(bool _) { }
+
+                internal void <StopSubscription>b__620_0(bool _) { }
+
+                internal void <SubtractTickets>b__598_0(bool b, object o) { }
+
+                internal void <TryBuyChosenProduct>b__59_0(bool success, List<RewardData> list) { }
+
+                internal void <TryBuyGemsSubscription>b__265_0(bool b, List<RewardData> o) { }
+
+                internal void <TryBuySubscription>b__624_0(bool b, List<RewardData> o) { }
+
+                internal void <UnlinkBackendAccount>b__51_0(bool success, object data) { }
+
+                internal void <UpdateGuild>b__348_0(bool success, object o) { }
+
+                internal void <UpdateGuildAsAnyUser>b__367_0(bool success, object o) { }
+
+                internal void <VanityUnlock>b__825_0(bool b, object o) { }
+
+                internal void <VanityUnlockReleased>b__826_0(bool b, object o) { }
+
+                internal void <WebPubSubSendToUser>b__893_0(bool success, object o) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass138_0
+        {
+                public DailyMissionsSlotData premiumSlotData; //Field offset: 0x10
+
+                public <>c__DisplayClass138_0() { }
+
+                internal bool <RerollPremiumMission>b__1(DailyMissionProgressData x) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass14_0
+        {
+                public ConfigDiffService configDiffService; //Field offset: 0x10
+
+                public <>c__DisplayClass14_0() { }
+
+                internal void <ABTestsForceTestParticipation>b__0(bool success, object o) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass157_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass157_0() { }
+
+                internal void <UnlockAllEmotes>b__0(bool _) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass576_0
+        {
+                public IBackendService backendService; //Field offset: 0x10
+                public WaitingWindow waitingWindow; //Field offset: 0x18
+
+                public <>c__DisplayClass576_0() { }
+
+                internal void <ResetSkillshotSoon>b__0(string response) { }
+
+                internal void <ResetSkillshotSoon>b__1(string errorMessage) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass586_0
+        {
+                public IBackendService backendService; //Field offset: 0x10
+                public WaitingWindow waitingWindow; //Field offset: 0x18
+
+                public <>c__DisplayClass586_0() { }
+
+                internal void <ResetFreeChestUserDataSoon>b__0(string response) { }
+
+                internal void <ResetFreeChestUserDataSoon>b__1(string errorMessage) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass607_0
+        {
+                public IInventoryService inventoryService; //Field offset: 0x10
+
+                public <>c__DisplayClass607_0() { }
+
+                internal bool <FakeSpecialOfferNewAnimation>b__0(OwnedItemData owned) { }
+
+                internal bool <FakeSpecialOfferNewAnimation>b__1(OwnedItemData owned) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass614_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass614_0() { }
+
+                internal void <BuySpecialOffer>b__0(bool success, List<RewardData> list) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass64_0
+        {
+                public PlayerProfileFullData fullData; //Field offset: 0x10
+                public ProfileWindow profileWindow; //Field offset: 0x18
+                public SROptions <>4__this; //Field offset: 0x20
+
+                public <>c__DisplayClass64_0() { }
+
+                internal void <CheckProfileForPlayerId>b__1(bool success, object dataObj) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass730_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass730_0() { }
+
+                internal void <ResetTriviaRoadUserData>b__0(bool _) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass731_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass731_0() { }
+
+                internal void <StartTriviaOfferNow>b__0(bool _) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass732_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass732_0() { }
+
+                internal void <EndTriviaOfferSoon>b__0(bool _) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass97_0
+        {
+                public WaitingWindow waitingWindow; //Field offset: 0x10
+
+                public <>c__DisplayClass97_0() { }
+
+                internal void <OverrideBowlerQualityConfigValue>b__0(bool _) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <ResetBallCoro>d__754 : IEnumerator<Object>, IEnumerator, IDisposable
+        {
+                private int <>1__state; //Field offset: 0x10
+                private object <>2__current; //Field offset: 0x18
+                public SROptions <>4__this; //Field offset: 0x20
+
+                private override object System.Collections.Generic.IEnumerator<System.Object>.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                private override object System.Collections.IEnumerator.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                [DebuggerHidden]
+                public <ResetBallCoro>d__754(int <>1__state) { }
+
+                private override bool MoveNext() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.Generic.IEnumerator<System.Object>.get_Current() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.IEnumerator.get_Current() { }
+
+                [DebuggerHidden]
+                private override void System.Collections.IEnumerator.Reset() { }
+
+                [DebuggerHidden]
+                private override void System.IDisposable.Dispose() { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <ResetPinsCoro>d__809 : IEnumerator<Object>, IEnumerator, IDisposable
+        {
+                private int <>1__state; //Field offset: 0x10
+                private object <>2__current; //Field offset: 0x18
+                public SROptions <>4__this; //Field offset: 0x20
+
+                private override object System.Collections.Generic.IEnumerator<System.Object>.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                private override object System.Collections.IEnumerator.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                [DebuggerHidden]
+                public <ResetPinsCoro>d__809(int <>1__state) { }
+
+                private override bool MoveNext() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.Generic.IEnumerator<System.Object>.get_Current() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.IEnumerator.get_Current() { }
+
+                [DebuggerHidden]
+                private override void System.Collections.IEnumerator.Reset() { }
+
+                [DebuggerHidden]
+                private override void System.IDisposable.Dispose() { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <ResetTimeCoro>d__819 : IEnumerator<Object>, IEnumerator, IDisposable
+        {
+                private int <>1__state; //Field offset: 0x10
+                private object <>2__current; //Field offset: 0x18
+
+                private override object System.Collections.Generic.IEnumerator<System.Object>.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                private override object System.Collections.IEnumerator.Current
+                {
+                        [DebuggerHidden]
+                        private get { } //Length: 8
+                }
+
+                [DebuggerHidden]
+                public <ResetTimeCoro>d__819(int <>1__state) { }
+
+                private override bool MoveNext() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.Generic.IEnumerator<System.Object>.get_Current() { }
+
+                [DebuggerHidden]
+                private override object System.Collections.IEnumerator.get_Current() { }
+
+                [DebuggerHidden]
+                private override void System.Collections.IEnumerator.Reset() { }
+
+                [DebuggerHidden]
+                private override void System.IDisposable.Dispose() { }
+
+        }
+
+        [CompilerGenerated]
+        private struct <UnlinkBackendServicesAsync>d__50 : IAsyncStateMachine
+        {
+                public int <>1__state; //Field offset: 0x0
+                public AsyncVoidMethodBuilder <>t__builder; //Field offset: 0x8
+                private TaskAwaiter<IAccountLinkResult> <>u__1; //Field offset: 0x28
+
+                private override void MoveNext() { }
+
+                [DebuggerHidden]
+                private override void SetStateMachine(IAsyncStateMachine stateMachine) { }
+
+        }
+
+        [AttributeUsage(192)]
+        internal sealed class DisplayNameAttribute : DisplayNameAttribute
+        {
+
+                public DisplayNameAttribute(string displayName) { }
+
+        }
+
+        [AttributeUsage(AttributeTargets::Property (128))]
+        internal sealed class IncrementAttribute : IncrementAttribute
+        {
+
+                public IncrementAttribute(double increment) { }
+
+        }
+
+        [AttributeUsage(AttributeTargets::Property (128))]
+        internal sealed class NumberRangeAttribute : NumberRangeAttribute
+        {
+
+                public NumberRangeAttribute(double min, double max) { }
+
+        }
+
+        [AttributeUsage(192)]
+        internal sealed class SortAttribute : SortAttribute
+        {
+
+                public SortAttribute(int priority) { }
+
+        }
+
+        private const int FreeChestMinutesToReset = 2; //Field offset: 0x0
+        private const string ALMEDIA_CATEGORY = "Almedia (Freecash)"; //Field offset: 0x0
+        private const int SkillshotMinutesToReset = 2; //Field offset: 0x0
+        public static bool firstControlsSet; //Field offset: 0x0
+        public static bool forceMulti; //Field offset: 0x1
+        public static bool forceBot; //Field offset: 0x2
+        public static bool devMatchmaking; //Field offset: 0x3
+        public static string roomID; //Field offset: 0x8
+        public static string opponentID; //Field offset: 0x10
+        public static string oneTimeOfferID; //Field offset: 0x18
+        public static int specialEventSplitLayout; //Field offset: 0x20
+        private static SROptions _current; //Field offset: 0x28
+        private ABTestSource abTestSource; //Field offset: 0x10
+        private string abTestName; //Field offset: 0x18
+        private string abTestVariant; //Field offset: 0x20
+        [CompilerGenerated]
+        private string <AchievementId>k__BackingField; //Field offset: 0x28
+        private float gameMusicVolume; //Field offset: 0x30
+        private float gameAmbientVolume; //Field offset: 0x34
+        private float menuMusicVolume; //Field offset: 0x38
+        private string chosenProduct; //Field offset: 0x40
+        private string playerIdCheck; //Field offset: 0x48
+        private int levelToSet; //Field offset: 0x50
+        private int seasonIdToSet; //Field offset: 0x54
+        [CompilerGenerated]
+        private int <ArenaIdForBowlerQuality>k__BackingField; //Field offset: 0x58
+        [CompilerGenerated]
+        private int <BowlerQualityPoints>k__BackingField; //Field offset: 0x5C
+        private string diff; //Field offset: 0x60
+        private string currencyCode; //Field offset: 0x68
+        private int currencyChange; //Field offset: 0x70
+        [CompilerGenerated]
+        private int <DayStreak>k__BackingField; //Field offset: 0x74
+        [CompilerGenerated]
+        private int <DailyRewardsDaysAgo>k__BackingField; //Field offset: 0x78
+        private string friendTargetId; //Field offset: 0x80
+        private string fakeFriendSenderId; //Field offset: 0x88
+        private bool forceGadsmeAds; //Field offset: 0x90
+        private bool stopGameTime; //Field offset: 0x91
+        private bool forceArena; //Field offset: 0x92
+        private int forcedArena; //Field offset: 0x94
+        private bool forceAutoPickup; //Field offset: 0x98
+        private bool autoPickup; //Field offset: 0x99
+        private BowlingBallType ballType; //Field offset: 0x9C
+        private bool forcedBall; //Field offset: 0xA0
+        private bool forcedDrawInRound; //Field offset: 0xA1
+        private bool forcedAllStandardTieBreakerRound; //Field offset: 0xA2
+        private bool forcedSplit; //Field offset: 0xA3
+        private bool forceThrowResult; //Field offset: 0xA4
+        private ThrowResult forcedThrowResult; //Field offset: 0xA8
+        private int forcedStrikeInRow; //Field offset: 0xAC
+        private int forcedAlternativeText; //Field offset: 0xB0
+        [CompilerGenerated]
+        private int <MinutesToSimulate>k__BackingField; //Field offset: 0xB4
+        private string guildId; //Field offset: 0xB8
+        private string guildTargetId; //Field offset: 0xC0
+        private string fakeGuildSenderId; //Field offset: 0xC8
+        private string guildInviteeId; //Field offset: 0xD0
+        private string guildRequesterId; //Field offset: 0xD8
+        private string guildMemberId; //Field offset: 0xE0
+        private GuildRole guildRole; //Field offset: 0xE8
+        private string guildMessage; //Field offset: 0xF0
+        private int guildTimestamp; //Field offset: 0xF8
+        private string guildName; //Field offset: 0x100
+        private string guildDesc; //Field offset: 0x108
+        private string guildCountry; //Field offset: 0x110
+        private string guildBadgeText; //Field offset: 0x118
+        private int guildBadgeIcon; //Field offset: 0x120
+        private int guildBadgeBg; //Field offset: 0x124
+        private int guildBadgeLayout; //Field offset: 0x128
+        private string guildPattern; //Field offset: 0x130
+        private int guildsNumber; //Field offset: 0x138
+        private int guildsMembers; //Field offset: 0x13C
+        private int guildsStartScore; //Field offset: 0x140
+        private PresetType currentClip; //Field offset: 0x144
+        private string purchaseToken; //Field offset: 0x148
+        private string inboxRecipientId; //Field offset: 0x150
+        private string inboxMessage; //Field offset: 0x158
+        private int inboxTimestamp; //Field offset: 0x160
+        private string inboxFakePlayerId; //Field offset: 0x168
+        private string inboxChatHash; //Field offset: 0x170
+        [CompilerGenerated]
+        private int <Tokens>k__BackingField; //Field offset: 0x178
+        private QualityLevelTypes qualityLevel; //Field offset: 0x17C
+        private float shadowValue; //Field offset: 0x180
+        private bool srpBatchSwitch; //Field offset: 0x184
+        private bool dynamicBatchingSwitch; //Field offset: 0x185
+        private bool forcePinLayout; //Field offset: 0x186
+        private LayoutType forcedPinLayout; //Field offset: 0x188
+        private int pinToForce; //Field offset: 0x18C
+        private string paramId; //Field offset: 0x190
+        private string paramSlot; //Field offset: 0x198
+        private string activeNicknamePresetId; //Field offset: 0x1A0
+        private string availableNicknamePresetIds; //Field offset: 0x1A8
+        [CompilerGenerated]
+        private int <WantedTrophies>k__BackingField; //Field offset: 0x1B0
+        private string socialIncentivesRewardId; //Field offset: 0x1B8
+        private string specialEventName; //Field offset: 0x1C0
+        private int specialEventPoints; //Field offset: 0x1C8
+        private string specialOfferStoreId; //Field offset: 0x1D0
+        [CompilerGenerated]
+        private bool <DebugSwipeLineMode>k__BackingField; //Field offset: 0x1D8
+        [CompilerGenerated]
+        private bool <DebugTrajectoryMode>k__BackingField; //Field offset: 0x1D9
+        [CompilerGenerated]
+        private float <MinSwipeTime>k__BackingField; //Field offset: 0x1DC
+        [CompilerGenerated]
+        private float <MaxSwipeTime>k__BackingField; //Field offset: 0x1E0
+        [CompilerGenerated]
+        private float <MinSwipeDistance>k__BackingField; //Field offset: 0x1E4
+        [CompilerGenerated]
+        private float <AllowedSwipeAngleThreshold>k__BackingField; //Field offset: 0x1E8
+        [CompilerGenerated]
+        private float <MaxSwipeDiffYX>k__BackingField; //Field offset: 0x1EC
+        [CompilerGenerated]
+        private float <MinVelocityMagnitude>k__BackingField; //Field offset: 0x1F0
+        [CompilerGenerated]
+        private float <PowerMin>k__BackingField; //Field offset: 0x1F4
+        [CompilerGenerated]
+        private float <PowerMax>k__BackingField; //Field offset: 0x1F8
+        [CompilerGenerated]
+        private float <PowerSwipeMult>k__BackingField; //Field offset: 0x1FC
+        [CompilerGenerated]
+        private float <TrajectorySwipeRange>k__BackingField; //Field offset: 0x200
+        [CompilerGenerated]
+        private float <EndPointXMultiplier>k__BackingField; //Field offset: 0x204
+        [CompilerGenerated]
+        private float <EndPointXClamp>k__BackingField; //Field offset: 0x208
+        [CompilerGenerated]
+        private bool <EnableSwipeSpin>k__BackingField; //Field offset: 0x20C
+        [CompilerGenerated]
+        private float <TrajectorySwipeSpinMultiplier>k__BackingField; //Field offset: 0x210
+        [CompilerGenerated]
+        private float <TrajectorySwipeMaxSpinWidth>k__BackingField; //Field offset: 0x214
+        [CompilerGenerated]
+        private float <MidPointSpinInfluence>k__BackingField; //Field offset: 0x218
+        [CompilerGenerated]
+        private float <EndPointSpinInfluence>k__BackingField; //Field offset: 0x21C
+        [CompilerGenerated]
+        private float <MinSpinTrackRange>k__BackingField; //Field offset: 0x220
+        [CompilerGenerated]
+        private float <MaxSpinTrackRange>k__BackingField; //Field offset: 0x224
+        [CompilerGenerated]
+        private float <SwipeInputZRecordMin>k__BackingField; //Field offset: 0x228
+        [CompilerGenerated]
+        private float <SwipeInputZRecordMax>k__BackingField; //Field offset: 0x22C
+        [CompilerGenerated]
+        private float <InputFirstTrimFrameRangeNorm>k__BackingField; //Field offset: 0x230
+        [CompilerGenerated]
+        private float <InputSecondTrimFrameRangeNorm>k__BackingField; //Field offset: 0x234
+        private int gemsToRecharge; //Field offset: 0x238
+        private BowlingBallsController subscribedBallsController; //Field offset: 0x240
+        private PinsController pinsController; //Field offset: 0x248
+        private float timeScaleToForce; //Field offset: 0x250
+        private bool forceTimeScale; //Field offset: 0x254
+        private bool rewardedVideosEnabled; //Field offset: 0x255
+        private bool interstitialsEnabled; //Field offset: 0x256
+        private bool interstitialsDisabledForPayers; //Field offset: 0x257
+        private int matchesRequiredForInterstitials; //Field offset: 0x258
+        private float interstitialsCooldownTime; //Field offset: 0x25C
+        private bool interstitialsAfterWonGame; //Field offset: 0x260
+        private bool interstitialsAfterLostGame; //Field offset: 0x261
+        private bool interstitialsAfterRewardedVideo; //Field offset: 0x262
+        private bool interstitialsAfterShowHideWindows; //Field offset: 0x263
+        private bool forceInterstitial; //Field offset: 0x264
+        private int aBTestGroupNumber; //Field offset: 0x268
+        [CompilerGenerated]
+        private SROptionsPropertyChanged PropertyChanged; //Field offset: 0x270
+        [CompilerGenerated]
+        private PropertyChangedEventHandler InterfacePropertyChangedEventHandler; //Field offset: 0x278
+
+        private event PropertyChangedEventHandler InterfacePropertyChangedEventHandler
+        {
+                [CompilerGenerated]
+                private add { } //Length: 156
+                [CompilerGenerated]
+                private remove { } //Length: 156
+        }
+
+        public event SROptionsPropertyChanged PropertyChanged
+        {
+                [CompilerGenerated]
+                 add { } //Length: 156
+                [CompilerGenerated]
+                 remove { } //Length: 156
+        }
+
+        private override event PropertyChangedEventHandler System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+        {
+                private add { } //Length: 4
+                private remove { } //Length: 4
+        }
+
+        [Category("VideoAdsABTest")]
+        public int ABTestGroupNumber
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("ABTests")]
+        [DisplayName("ABTestName")]
+        [Sort(1)]
+        public string ABTestName
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("ABTests")]
+        [DisplayName("ABTestSource")]
+        [Sort(0)]
+        public ABTestSource ABTestSource
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("ABTests")]
+        [DisplayName("ABTestVariant")]
+        [Sort(2)]
+        public string ABTestVariant
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Balance-GUIDE")]
+        [Increment(0.05)]
+        [NumberRange(0, 1)]
+        public float AccuracyTrajectoryRange
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("Achievements")]
+        public string AchievementId
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Profile Customization")]
+        public string ActiveNicknamePresetId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("_Bowler Quality Steps")]
+        [DisplayName("Adjustment Aim Offset Cap")]
+        [Sort(7)]
+        public float AimOffsetAdjustmentCap
+        {
+                 get { } //Length: 36
+                 set { } //Length: 48
+        }
+
+        [Category("_Bowler Quality Steps")]
+        [DisplayName("Adjustment Aim Offset Step")]
+        [Sort(5)]
+        public float AimOffsetAdjustmentStep
+        {
+                 get { } //Length: 36
+                 set { } //Length: 48
+        }
+
+        [Category("_Bowler Quality Steps")]
+        [DisplayName("Adjustment Aim Offset Step Value")]
+        [Sort(6)]
+        public float AimOffsetAdjustmentStepValue
+        {
+                 get { } //Length: 36
+                 set { } //Length: 48
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(5)]
+        public float AllowedSwipeAngleThreshold
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("State")]
+        [Sort(0)]
+        public string AlmediaState
+        {
+                 get { } //Length: 1152
+        }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Verbose Logs")]
+        [Sort(10)]
+        public bool AlmediaVerboseLogs
+        {
+                 get { } //Length: 140
+                 set { } //Length: 192
+        }
+
+        [Category("_Bowler Quality Progress")]
+        [DisplayName("Arena Id")]
+        [NumberRange(1, 19)]
+        [Sort(1)]
+        public int ArenaIdForBowlerQuality
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_Gameplay")]
+        public bool AutoPickup
+        {
+                 get { } //Length: 132
+                 set { } //Length: 152
+        }
+
+        [Category("Profile Customization")]
+        public string AvailableNicknamePresetIds
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Balance-PhysMat")]
+        [Increment(0.05)]
+        [NumberRange(0, 1)]
+        public float BallBounciness
+        {
+                 get { } //Length: 288
+                 set { } //Length: 324
+        }
+
+        [Category("Balance-PhysMat")]
+        [Increment(0.01)]
+        [NumberRange(0, 1)]
+        public float BallDynamicFriction
+        {
+                 get { } //Length: 288
+                 set { } //Length: 324
+        }
+
+        [Category("Balance-SPEED")]
+        [Increment(0.25)]
+        [NumberRange(4, 20)]
+        public float BallInitialSpeed
+        {
+                 get { } //Length: 216
+                 set { } //Length: 468
+        }
+
+        [Category("Balance-WEIGHT")]
+        [Increment(0.5)]
+        [NumberRange(0, 20)]
+        public float BallMass
+        {
+                 get { } //Length: 216
+                 set { } //Length: 468
+        }
+
+        [Category("Balance-PhysMat")]
+        [Increment(0.01)]
+        [NumberRange(0, 1)]
+        public float BallStaticFriction
+        {
+                 get { } //Length: 288
+                 set { } //Length: 324
+        }
+
+        [Category("_Gameplay")]
+        public BowlingBallType BallType
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("Profile Customization")]
+        [Increment(0.1)]
+        [NumberRange(0, 1)]
+        public float BodySize
+        {
+                 get { } //Length: 328
+                 set { } //Length: 644
+        }
+
+        [Category("_Bowler Quality Progress")]
+        [DisplayName("Quality Points")]
+        [NumberRange(0, 2147483647)]
+        [Sort(2)]
+        public int BowlerQualityPoints
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        private BowlerQualityService bowlerQualityService
+        {
+                private get { } //Length: 100
+        }
+
+        [Category("Trajectory")]
+        public GameplayModes ChangeTrajectory
+        {
+                 get { } //Length: 124
+                 set { } //Length: 128
+        }
+
+        [Category("_Backend")]
+        public string ChosenProduct
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_Currency")]
+        [DisplayName("Change")]
+        [Sort(2)]
+        public int CurrencyChange
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_Currency")]
+        [DisplayName("CurrencyCode")]
+        [Sort(1)]
+        public string CurrencyCode
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        public static SROptions Current
+        {
+                 get { } //Length: 88
+        }
+
+        [Category("Haptics")]
+        public PresetType CurrentClip
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Daily Rewards")]
+        [DisplayName("DaysAgo")]
+        [Sort(10)]
+        public int DailyRewardsDaysAgo
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Daily Rewards")]
+        [DisplayName("DayStreak")]
+        [Sort(2)]
+        public int DayStreak
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(2)]
+        public bool DebugSwipeLineMode
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(2)]
+        public bool DebugTrajectoryMode
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_Networking")]
+        public bool DevMatchmaking
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("Core")]
+        public string Diff
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Performance")]
+        public bool DynamicBatchingSwitch
+        {
+                 get { } //Length: 164
+                 set { } //Length: 192
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(13)]
+        public bool EnableSwipeSpin
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(16)]
+        public float EndPointSpinInfluence
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(12)]
+        public float EndPointXClamp
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(12)]
+        public float EndPointXMultiplier
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Balance-HOOK")]
+        [Increment(0.1)]
+        [NumberRange(0, 2)]
+        public float EndSkewMod
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("Friends")]
+        [DisplayName("FakeFriendSenderId")]
+        [Sort(11)]
+        public string FakeFriendSenderId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("FakeSenderId")]
+        [Sort(12)]
+        public string FakeGuildSenderId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Controls")]
+        public bool FirstControlsSet
+        {
+                 get { } //Length: 136
+                 set { } //Length: 196
+        }
+
+        [Category("_Bowler Quality Steps")]
+        [DisplayName("Force Aim Offset")]
+        [Sort(8)]
+        public bool ForceAimOffset
+        {
+                 get { } //Length: 36
+                 set { } //Length: 44
+        }
+
+        [Category("_Gameplay")]
+        public bool ForceArena
+        {
+                 get { } //Length: 8
+                 set { } //Length: 140
+        }
+
+        [Category("_Gameplay")]
+        public bool ForceAutoPickup
+        {
+                 get { } //Length: 132
+                 set { } //Length: 152
+        }
+
+        [Category("_Networking")]
+        public bool ForceBot
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("_Backend")]
+        public bool ForceCallbackAwait
+        {
+                 get { } //Length: 224
+                 set { } //Length: 232
+        }
+
+        [Category("_Bowler Quality Steps")]
+        [DisplayName("Forced Aim Offset")]
+        [Sort(9)]
+        public float ForcedAimOffset
+        {
+                 get { } //Length: 36
+                 set { } //Length: 48
+        }
+
+        [Category("_Gameplay")]
+        public bool ForcedAllStandardTieBreakerRound
+        {
+                 get { } //Length: 124
+                 set { } //Length: 144
+        }
+
+        [Category("_Gameplay")]
+        public int ForcedAlternativeText
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("_Gameplay")]
+        public int ForcedArena
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("_Gameplay")]
+        public bool ForcedBall
+        {
+                 get { } //Length: 124
+                 set { } //Length: 144
+        }
+
+        [Category("_Gameplay")]
+        public bool ForcedDrawInRound
+        {
+                 get { } //Length: 124
+                 set { } //Length: 144
+        }
+
+        [Category("Pins")]
+        public LayoutType ForcedPinLayout
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("_Gameplay")]
+        public bool ForcedSplit
+        {
+                 get { } //Length: 124
+                 set { } //Length: 144
+        }
+
+        [Category("_Gameplay")]
+        public int ForcedStrikeInRow
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("_Gameplay")]
+        public ThrowResult ForcedThrowResult
+        {
+                 get { } //Length: 8
+                 set { } //Length: 136
+        }
+
+        [Category("Gadsme")]
+        public bool ForceGadsmeAds
+        {
+                 get { } //Length: 8
+                 set { } //Length: 144
+        }
+
+        [Category("VideoAds")]
+        public bool ForceInterstitial
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_Networking")]
+        public bool ForceMulti
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("Pins")]
+        public bool ForcePinLayout
+        {
+                 get { } //Length: 8
+                 set { } //Length: 140
+        }
+
+        [Category("_Gameplay")]
+        public bool ForceThrowResult
+        {
+                 get { } //Length: 8
+                 set { } //Length: 140
+        }
+
+        [Category("_Utils")]
+        public bool ForceTimeScale
+        {
+                 get { } //Length: 8
+                 set { } //Length: 644
+        }
+
+        [Category("Friends")]
+        [DisplayName("FriendTargetId")]
+        [Sort(10)]
+        public string FriendTargetId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Audio")]
+        [Increment(0.1)]
+        [NumberRange(0, 1)]
+        public float GameAmbientVolume
+        {
+                 get { } //Length: 8
+                 set { } //Length: 280
+        }
+
+        [Category("Audio")]
+        [Increment(0.1)]
+        [NumberRange(0, 1)]
+        public float GameMusicVolume
+        {
+                 get { } //Length: 8
+                 set { } //Length: 280
+        }
+
+        [Category("Balance-CONTROL")]
+        [Increment(0.1)]
+        [NumberRange(0, 2)]
+        public float GaugeFactorMax
+        {
+                 get { } //Length: 216
+                 set { } //Length: 496
+        }
+
+        [Category("Balance-CONTROL")]
+        [Increment(0.1)]
+        [NumberRange(0, 2)]
+        public float GaugeFactorMin
+        {
+                 get { } //Length: 216
+                 set { } //Length: 496
+        }
+
+        [Category("Upselling")]
+        public int GemsToRecharge
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildPattern")]
+        [Sort(27)]
+        public string GildPattern
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildBadgeBg")]
+        [Sort(25)]
+        public int GuildBadgeBg
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildBadgeIcon")]
+        [Sort(24)]
+        public int GuildBadgeIcon
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildBadgeLayout")]
+        [Sort(26)]
+        public int GuildBadgeLayout
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildBadgeText")]
+        [Sort(23)]
+        public string GuildBadgeText
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildCountry")]
+        [Sort(22)]
+        public string GuildCountry
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildDesc")]
+        [Sort(21)]
+        public string GuildDesc
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildId")]
+        [Sort(10)]
+        public string GuildId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("InviteeId")]
+        [Sort(13)]
+        public string GuildInviteeId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("MemberId")]
+        [Sort(15)]
+        public string GuildMemberId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("Message")]
+        [Sort(17)]
+        public string GuildMessage
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("GuildName")]
+        [Sort(20)]
+        public string GuildName
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Guilds")]
+        [DisplayName("RequesterId")]
+        [Sort(14)]
+        public string GuildRequesterId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("Role")]
+        [Sort(16)]
+        public GuildRole GuildRole
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("Members")]
+        [Sort(601)]
+        public int GuildsMembers
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("Number")]
+        [Sort(600)]
+        public int GuildsNumber
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("StartScore")]
+        [Sort(602)]
+        public int GuildsStartScore
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("TargetId")]
+        [Sort(11)]
+        public string GuildTargetId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Guilds")]
+        [DisplayName("Timestamp")]
+        [Sort(18)]
+        public int GuildTimestamp
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Inbox")]
+        [DisplayName("ChatHash")]
+        [Sort(14)]
+        public string InboxChatHash
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Inbox")]
+        [DisplayName("FakePlayerId")]
+        [Sort(13)]
+        public string InboxFakePlayerId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Inbox")]
+        [DisplayName("Message")]
+        [Sort(11)]
+        public string InboxMessage
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Inbox")]
+        [DisplayName("RecipientId")]
+        [Sort(10)]
+        public string InboxRecipientId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Inbox")]
+        [DisplayName("Timestamp")]
+        [Sort(12)]
+        public int InboxTimestamp
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(21)]
+        public float InputFirstTrimFrameRangeNorm
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(22)]
+        public float InputSecondTrimFrameRangeNorm
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstAfterLostGame
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstAfterRV
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstAfterShowHideWnds
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstAfterWonGame
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public float IntstCooldown
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstDisabledForPayers
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public bool IntstEnabled
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public string IntstOfferLastShow
+        {
+                 get { } //Length: 608
+        }
+
+        [Category("VideoAds")]
+        public string IntstOfferNextStep
+        {
+                 get { } //Length: 1408
+        }
+
+        [Category("VideoAds")]
+        public string IntstOfferShown
+        {
+                 get { } //Length: 380
+        }
+
+        [Category("VideoAds")]
+        public string IntstWatchedCount
+        {
+                 get { } //Length: 172
+        }
+
+        [Category("BattlePass")]
+        public int LevelToSet
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("VideoAds")]
+        public int MatchesRequiredIntst
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(18)]
+        public float MaxSpinTrackRange
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(5)]
+        public float MaxSwipeDiffYX
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(4)]
+        public float MaxSwipeTime
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Audio")]
+        [Increment(0.1)]
+        [NumberRange(0, 1)]
+        public float MenuMusicVolume
+        {
+                 get { } //Length: 8
+                 set { } //Length: 280
+        }
+
+        [Category("Balance-HOOK")]
+        [Increment(0.1)]
+        [NumberRange(0, 2)]
+        public float MidPointHeightMod
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(15)]
+        public float MidPointSpinInfluence
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(17)]
+        public float MinSpinTrackRange
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(5)]
+        public float MinSwipeDistance
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(3)]
+        public float MinSwipeTime
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("GemsSubscription")]
+        public int MinutesToSimulate
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(6)]
+        public float MinVelocityMagnitude
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("OneTimeOffers")]
+        public string OneTimeOfferID
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("_Networking")]
+        public string OpponentID
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("Profile Customization")]
+        public string ParamId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Profile Customization")]
+        public string ParamSlot
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("VideoAds")]
+        public string PayerStatus
+        {
+                 get { } //Length: 480
+        }
+
+        [Category("Balance-PINS")]
+        [Increment(0.05)]
+        [NumberRange(0, 1)]
+        public float PinBounce
+        {
+                 get { } //Length: 288
+                 set { } //Length: 304
+        }
+
+        [Category("Balance-PINS")]
+        [Increment(0.05)]
+        [NumberRange(0, 1)]
+        public float PinDynamicFriction
+        {
+                 get { } //Length: 288
+                 set { } //Length: 304
+        }
+
+        [Category("Balance-PINS")]
+        [Increment(0.1)]
+        [NumberRange(0, 10)]
+        public float PinMass
+        {
+                 get { } //Length: 172
+                 set { } //Length: 200
+        }
+
+        [Category("Balance-PINS")]
+        [Increment(0.05)]
+        [NumberRange(0, 1)]
+        public float PinStaticFriction
+        {
+                 get { } //Length: 288
+                 set { } //Length: 304
+        }
+
+        [Category("Pins")]
+        public int PinToForce
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_Progression")]
+        public int PlayedMatchesInTotal
+        {
+                 get { } //Length: 116
+        }
+
+        [Category("_Backend")]
+        public string PlayerIdCheck
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(9)]
+        public float PowerMax
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(8)]
+        public float PowerMin
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(10)]
+        public float PowerSwipeMult
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("IAP")]
+        public string PurchaseToken
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Performance")]
+        public QualityLevelTypes QualityLevel
+        {
+                 get { } //Length: 8
+                 set { } //Length: 28
+        }
+
+        [Category("_Networking")]
+        public string RoomID
+        {
+                 get { } //Length: 88
+                 set { } //Length: 96
+        }
+
+        [Category("VideoAds")]
+        public bool RVsEnabled
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("BattlePass")]
+        public int SeasonIdToSet
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        private ISpecialEventsService service
+        {
+                private get { } //Length: 100
+        }
+
+        [Category("Balance-HOOK")]
+        [Increment(0.1)]
+        [NumberRange(0, 2)]
+        public float SideSkewMod
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("_Networking")]
+        public bool SimulateLag
+        {
+                 get { } //Length: 76
+                 set { } //Length: 68
+        }
+
+        [Category("SocialIncentives")]
+        [DisplayName("RewardId")]
+        [Sort(10)]
+        public string SocialIncentivesRewardId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("SE")]
+        [Sort(1)]
+        public string SpecialEventName
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("SE")]
+        [Sort(2)]
+        public int SpecialEventPoints
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("SE")]
+        [NumberRange(-1, 35)]
+        [Sort(30)]
+        public int SpecialEventSplitLayout
+        {
+                 get { } //Length: 88
+                 set { } //Length: 92
+        }
+
+        [Category("_Special Offers")]
+        public string SpecialOfferStoreId
+        {
+                 get { } //Length: 8
+                 set { } //Length: 16
+        }
+
+        [Category("Balance-HOOK")]
+        [Increment(0.1)]
+        [NumberRange(0, 99)]
+        public float SpinMaxValue
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("Performance")]
+        public bool SRPBatchSwitch
+        {
+                 get { } //Length: 164
+                 set { } //Length: 192
+        }
+
+        [Category("_Gameplay")]
+        public bool StopGameTimer
+        {
+                 get { } //Length: 8
+                 set { } //Length: 432
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(20)]
+        public float SwipeInputZRecordMax
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(19)]
+        public float SwipeInputZRecordMin
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_Utils")]
+        public bool SwitchPhysicsAutoSIM
+        {
+                 get { } //Length: 80
+                 set { } //Length: 96
+        }
+
+        [Category("_Utils")]
+        [Increment(0.5)]
+        public float TimeScaleToForce
+        {
+                 get { } //Length: 8
+                 set { } //Length: 8
+        }
+
+        [Category("Lucky Wheel")]
+        public int Tokens
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("Balance-GUIDE")]
+        [Increment(0.5)]
+        [NumberRange(0, 20)]
+        public float TrajectoryRange
+        {
+                 get { } //Length: 216
+                 set { } //Length: 464
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(14)]
+        public float TrajectorySwipeMaxSpinWidth
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(11)]
+        public float TrajectorySwipeRange
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_SwipeControls")]
+        [Sort(14)]
+        public float TrajectorySwipeSpinMultiplier
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        [Category("_Progression")]
+        public int WantedTrophies
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        private static SROptions() { }
+
+        public SROptions() { }
+
+        [CompilerGenerated]
+        private void <CheckProfileForPlayerId>b__64_0(bool cos, object obj) { }
+
+        [CompilerGenerated]
+        private void <DeleteChat>b__437_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <DeleteChatMessage>b__436_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <GetChatMessagesForPlayer>b__441_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <GetGuild>b__336_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <InboxBlacklistUser>b__438_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <InboxUnBlacklistUser>b__439_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <LeaveChat>b__435_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <OnAddExperienceDebug>b__70_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnClaimFreeRewardsDebug>b__72_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnClaimPremiumRewardsDebug>b__73_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnIncreaseLevelDebug>b__71_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnMaxLevelDebug>b__74_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnResetUserDataDebug>b__69_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnSeasonIdSetDebug>b__84_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <OnSetLevelDebug>b__79_0(bool success, object response) { }
+
+        [CompilerGenerated]
+        private void <RequestChatMessages>b__431_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <RequestInboxUserData>b__430_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <RestartSkillshot>b__575_0(bool success, object dataObj) { }
+
+        [CompilerGenerated]
+        private void <RevertVanitiesToStarters>b__827_0(bool b, object o) { }
+
+        [CompilerGenerated]
+        private void <SendChatMessage>b__432_0(bool success, object o) { }
+
+        [CompilerGenerated]
+        private void <SendResult>b__599_0(bool b, object o) { }
+
+        [CompilerGenerated]
+        private bool <SendResult>b__599_1(SpecialEventProgress se) { }
+
+        [CompilerGenerated]
+        private void <SocialIncentivesClaimReward>b__582_0(bool success, object o) { }
+
+        [Category("ABTests")]
+        [DisplayName("ForceTestParticipation")]
+        public void ABTestsForceTestParticipation() { }
+
+        [Category("ABTests")]
+        [DisplayName("LogMergedDiff")]
+        public void ABTestsLogMergedDiff() { }
+
+        [Category("ABTests")]
+        [DisplayName("LogParticipationData")]
+        public void ABTestsLogParticipationData() { }
+
+        [Category("Friends")]
+        [DisplayName("AcceptFriendInvite")]
+        [Sort(24)]
+        public void AcceptFriendInvite() { }
+
+        [Category("Friends")]
+        [DisplayName("AcceptFriendInviteAsAnyUser")]
+        [Sort(54)]
+        public void AcceptFriendInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("AcceptInvite")]
+        [Sort(72)]
+        public void AcceptGuildInvite() { }
+
+        [Category("Guilds")]
+        [DisplayName("AcceptInviteAsAnyUser")]
+        [Sort(272)]
+        public void AcceptGuildInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("AcceptJoinRequest")]
+        [Sort(77)]
+        public void AcceptGuildJoinRequest() { }
+
+        [Category("Guilds")]
+        [DisplayName("AcceptJoinRequestAsAnyUser")]
+        [Sort(277)]
+        public void AcceptGuildJoinRequestAsAnyUser() { }
+
+        [Category("Upselling")]
+        public void ActivateOffer() { }
+
+        [CompilerGenerated]
+        private void add_InterfacePropertyChangedEventHandler(PropertyChangedEventHandler value) { }
+
+        [CompilerGenerated]
+        public void add_PropertyChanged(SROptionsPropertyChanged value) { }
+
+        [Category("Pins")]
+        public void AddForceToPin() { }
+
+        [Category("Upselling")]
+        public void AddGemsToRecharge() { }
+
+        [Category("Components")]
+        public void AddMaxPartsToAllComponents() { }
+
+        [Category("Lucky Wheel")]
+        public void AddPremiumTokens() { }
+
+        [Category("SE")]
+        [Sort(13)]
+        public void AddTickets() { }
+
+        [Category("Lucky Wheel")]
+        public void AddTokens() { }
+
+        [Category("Pins")]
+        public void AllPinsDown() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Claim Link Reward (force)")]
+        [Sort(7)]
+        public void AlmediaClaimLinkReward() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Engage (link / reward hub)")]
+        [Sort(6)]
+        public void AlmediaEngage() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Fetch Notifications")]
+        [Sort(9)]
+        public void AlmediaFetchNotifications() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Log State")]
+        [Sort(1)]
+        public void AlmediaLogState() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Reset Popup Schedule")]
+        [Sort(4)]
+        public void AlmediaResetPopupSchedule() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Retry SDK Initialization")]
+        [Sort(2)]
+        public void AlmediaRetryInitialization() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Run Popup Queue")]
+        [Sort(5)]
+        public void AlmediaRunPopupQueue() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Show Link Popup (via host window)")]
+        [Sort(3)]
+        public void AlmediaShowLinkPopup() { }
+
+        [Category("Almedia (Freecash)")]
+        [DisplayName("Show Offer")]
+        [Sort(8)]
+        public void AlmediaShowOffer() { }
+
+        [Category("VideoAds")]
+        public void Apply() { }
+
+        [Category("VideoAdsABTest")]
+        public void ApplyABTestGroup() { }
+
+        [Category("_SwipeControls")]
+        [Sort(1)]
+        public void ApplyBallSwipeConfig() { }
+
+        [Category("Core")]
+        public void ApplyDiffAdditive() { }
+
+        [Category("Core")]
+        public void ApplyDiffDirectly() { }
+
+        [Category("_Special Offers")]
+        [DisplayName("Buy")]
+        public void BuySpecialOffer() { }
+
+        [Category("Friends")]
+        [DisplayName("CancelFriendInvite")]
+        [Sort(22)]
+        public void CancelFriendInvite() { }
+
+        [Category("Friends")]
+        [DisplayName("CancelFriendInviteAsAnyUser")]
+        [Sort(52)]
+        public void CancelFriendInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("CancelInvite")]
+        [Sort(71)]
+        public void CancelGuildInvite() { }
+
+        [Category("Guilds")]
+        [DisplayName("CancelInviteAsAnyUser")]
+        [Sort(271)]
+        public void CancelGuildInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("CancelJoinRequest")]
+        [Sort(75)]
+        public void CancelGuildJoinRequest() { }
+
+        [Category("Guilds")]
+        [DisplayName("CancelJoinRequestAsAnyUser")]
+        [Sort(275)]
+        public void CancelGuildJoinRequestAsAnyUser() { }
+
+        [Category("_Currency")]
+        [DisplayName("ChangeCurrency")]
+        [Sort(3)]
+        public void ChangeCurrency() { }
+
+        [Category("Guilds")]
+        [DisplayName("ChangeMemberRole")]
+        [Sort(110)]
+        public void ChangeMemberRole() { }
+
+        [Category("Guilds")]
+        [DisplayName("ChangeMemberRoleAsAnyUser")]
+        [Sort(310)]
+        public void ChangeMemberRoleAsAnyUser() { }
+
+        [Category("_Backend")]
+        public void CheckCatalogItems() { }
+
+        [Category("_Backend")]
+        public void CheckMaintenance() { }
+
+        [Category("_Backend")]
+        public void CheckProfileForPlayerId() { }
+
+        [Category("_Backend")]
+        public void CheckServerTime() { }
+
+        [Category("OneTimeOffers")]
+        public void ClearBoughtOffers() { }
+
+        [Category("Emotes")]
+        [UsedImplicitly]
+        public void ClearEmotesToDefaultState() { }
+
+        [Category("OneTimeOffers")]
+        public void ClearSeenOffers() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("CollectDailyReward")]
+        [Sort(0)]
+        public void CollectDailyReward() { }
+
+        private void CollectReward(bool useTokens, bool premium) { }
+
+        [Category("Lucky Wheel")]
+        public void CollectRewardForFree() { }
+
+        [Category("Lucky Wheel")]
+        public void CollectRewardForPremiumToken() { }
+
+        [Category("Lucky Wheel")]
+        public void CollectRewardForToken() { }
+
+        [Category("Achievements")]
+        public void CompleteAchievementWithId() { }
+
+        [Category("Guilds")]
+        [DisplayName("CreateGuild")]
+        [Sort(101)]
+        public void CreateGuild() { }
+
+        [Category("Guilds")]
+        [DisplayName("CreateGuildAsAnyUser")]
+        [Sort(301)]
+        public void CreateGuildAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("CreateGuilds")]
+        [Sort(610)]
+        public void CreateGuilds() { }
+
+        [Category("Daily Missions")]
+        [DisplayName("ResetUserData")]
+        public void DailyMissionResetUserData() { }
+
+        [Category("_Vanity")]
+        public void DebugGetStandardFashionChest() { }
+
+        [Category("Mystery Rewards")]
+        public void DebugMysteryRewardsReset() { }
+
+        [Category("SE")]
+        [Sort(101)]
+        public void DebugResetAllEventsTutorials() { }
+
+        [Category("SE")]
+        [Sort(100)]
+        public void DebugSpecialEventsResetServerData() { }
+
+        [Category("Inbox")]
+        [DisplayName("DeleteChat")]
+        [Sort(32)]
+        public void DeleteChat() { }
+
+        [Category("Inbox")]
+        [DisplayName("DeleteChatMessage")]
+        [Sort(31)]
+        public void DeleteChatMessage() { }
+
+        [Category("Guilds")]
+        [DisplayName("DeleteMessage")]
+        [Sort(121)]
+        public void DeleteGuildMessage() { }
+
+        [Category("Guilds")]
+        [DisplayName("DeleteMessageAsAnyUser")]
+        [Sort(321)]
+        public void DeleteGuildMessageAsAnyUser() { }
+
+        [Category("_Bowler Quality Progress")]
+        [DisplayName("Display current values")]
+        [Sort(4)]
+        [UsedImplicitly]
+        public void DisplayCurrentRecommendedQualitiesForArenas() { }
+
+        [Category("_Gameplay")]
+        public void DrawGame() { }
+
+        [Category("TriviaRoad")]
+        [UsedImplicitly]
+        public void EndTriviaOfferSoon() { }
+
+        [Category("Seasons")]
+        public void FakeOpenSeasonChest() { }
+
+        [Category("_Special Offers")]
+        [DisplayName("FakeSpecialOfferNewAnimation")]
+        public void FakeSpecialOfferNewAnimation() { }
+
+        [Category("IAP")]
+        public void FinalizePurchaseWithToken() { }
+
+        private void FindAndSubscribeBallController() { }
+
+        private void FindAndSubscribePinsController() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("ForceLastLoginDaysAgo")]
+        [Sort(11)]
+        public void ForceLastLoginDaysAgo() { }
+
+        [Category("OneTimeOffers")]
+        public void ForceOpenOneTimeOfferWindow() { }
+
+        [Category("Skillshot")]
+        public void ForceRefreshSkillshot() { }
+
+        [Category("Lucky Wheel")]
+        public void ForceResetSoon() { }
+
+        [Category("_RateUs")]
+        public void ForceShowRateUsPopup() { }
+
+        [Category("Tutorial")]
+        public void ForceSkipTutorial() { }
+
+        [Category("_Special Offers")]
+        [DisplayName("ForceSpecialOfferPopup")]
+        public void ForceSpecialOfferPopup() { }
+
+        [Category("Inbox")]
+        [DisplayName("FullSpamInbox")]
+        [Sort(201)]
+        public void FullSpamInbox() { }
+
+        public int get_ABTestGroupNumber() { }
+
+        public string get_ABTestName() { }
+
+        public ABTestSource get_ABTestSource() { }
+
+        public string get_ABTestVariant() { }
+
+        public float get_AccuracyTrajectoryRange() { }
+
+        [CompilerGenerated]
+        public string get_AchievementId() { }
+
+        public string get_ActiveNicknamePresetId() { }
+
+        public float get_AimOffsetAdjustmentCap() { }
+
+        public float get_AimOffsetAdjustmentStep() { }
+
+        public float get_AimOffsetAdjustmentStepValue() { }
+
+        [CompilerGenerated]
+        public float get_AllowedSwipeAngleThreshold() { }
+
+        public string get_AlmediaState() { }
+
+        public bool get_AlmediaVerboseLogs() { }
+
+        [CompilerGenerated]
+        public int get_ArenaIdForBowlerQuality() { }
+
+        public bool get_AutoPickup() { }
+
+        public string get_AvailableNicknamePresetIds() { }
+
+        public float get_BallBounciness() { }
+
+        public float get_BallDynamicFriction() { }
+
+        public float get_BallInitialSpeed() { }
+
+        public float get_BallMass() { }
+
+        public float get_BallStaticFriction() { }
+
+        public BowlingBallType get_BallType() { }
+
+        public float get_BodySize() { }
+
+        [CompilerGenerated]
+        public int get_BowlerQualityPoints() { }
+
+        private BowlerQualityService get_bowlerQualityService() { }
+
+        public GameplayModes get_ChangeTrajectory() { }
+
+        public string get_ChosenProduct() { }
+
+        public int get_CurrencyChange() { }
+
+        public string get_CurrencyCode() { }
+
+        public static SROptions get_Current() { }
+
+        public PresetType get_CurrentClip() { }
+
+        [CompilerGenerated]
+        public int get_DailyRewardsDaysAgo() { }
+
+        [CompilerGenerated]
+        public int get_DayStreak() { }
+
+        [CompilerGenerated]
+        public bool get_DebugSwipeLineMode() { }
+
+        [CompilerGenerated]
+        public bool get_DebugTrajectoryMode() { }
+
+        public bool get_DevMatchmaking() { }
+
+        public string get_Diff() { }
+
+        public bool get_DynamicBatchingSwitch() { }
+
+        [CompilerGenerated]
+        public bool get_EnableSwipeSpin() { }
+
+        [CompilerGenerated]
+        public float get_EndPointSpinInfluence() { }
+
+        [CompilerGenerated]
+        public float get_EndPointXClamp() { }
+
+        [CompilerGenerated]
+        public float get_EndPointXMultiplier() { }
+
+        public float get_EndSkewMod() { }
+
+        public string get_FakeFriendSenderId() { }
+
+        public string get_FakeGuildSenderId() { }
+
+        public bool get_FirstControlsSet() { }
+
+        public bool get_ForceAimOffset() { }
+
+        public bool get_ForceArena() { }
+
+        public bool get_ForceAutoPickup() { }
+
+        public bool get_ForceBot() { }
+
+        public bool get_ForceCallbackAwait() { }
+
+        public float get_ForcedAimOffset() { }
+
+        public bool get_ForcedAllStandardTieBreakerRound() { }
+
+        public int get_ForcedAlternativeText() { }
+
+        public int get_ForcedArena() { }
+
+        public bool get_ForcedBall() { }
+
+        public bool get_ForcedDrawInRound() { }
+
+        public LayoutType get_ForcedPinLayout() { }
+
+        public bool get_ForcedSplit() { }
+
+        public int get_ForcedStrikeInRow() { }
+
+        public ThrowResult get_ForcedThrowResult() { }
+
+        public bool get_ForceGadsmeAds() { }
+
+        public bool get_ForceInterstitial() { }
+
+        public bool get_ForceMulti() { }
+
+        public bool get_ForcePinLayout() { }
+
+        public bool get_ForceThrowResult() { }
+
+        public bool get_ForceTimeScale() { }
+
+        public string get_FriendTargetId() { }
+
+        public float get_GameAmbientVolume() { }
+
+        public float get_GameMusicVolume() { }
+
+        public float get_GaugeFactorMax() { }
+
+        public float get_GaugeFactorMin() { }
+
+        public int get_GemsToRecharge() { }
+
+        public string get_GildPattern() { }
+
+        public int get_GuildBadgeBg() { }
+
+        public int get_GuildBadgeIcon() { }
+
+        public int get_GuildBadgeLayout() { }
+
+        public string get_GuildBadgeText() { }
+
+        public string get_GuildCountry() { }
+
+        public string get_GuildDesc() { }
+
+        public string get_GuildId() { }
+
+        public string get_GuildInviteeId() { }
+
+        public string get_GuildMemberId() { }
+
+        public string get_GuildMessage() { }
+
+        public string get_GuildName() { }
+
+        public string get_GuildRequesterId() { }
+
+        public GuildRole get_GuildRole() { }
+
+        public int get_GuildsMembers() { }
+
+        public int get_GuildsNumber() { }
+
+        public int get_GuildsStartScore() { }
+
+        public string get_GuildTargetId() { }
+
+        public int get_GuildTimestamp() { }
+
+        public string get_InboxChatHash() { }
+
+        public string get_InboxFakePlayerId() { }
+
+        public string get_InboxMessage() { }
+
+        public string get_InboxRecipientId() { }
+
+        public int get_InboxTimestamp() { }
+
+        [CompilerGenerated]
+        public float get_InputFirstTrimFrameRangeNorm() { }
+
+        [CompilerGenerated]
+        public float get_InputSecondTrimFrameRangeNorm() { }
+
+        public bool get_IntstAfterLostGame() { }
+
+        public bool get_IntstAfterRV() { }
+
+        public bool get_IntstAfterShowHideWnds() { }
+
+        public bool get_IntstAfterWonGame() { }
+
+        public float get_IntstCooldown() { }
+
+        public bool get_IntstDisabledForPayers() { }
+
+        public bool get_IntstEnabled() { }
+
+        public string get_IntstOfferLastShow() { }
+
+        public string get_IntstOfferNextStep() { }
+
+        public string get_IntstOfferShown() { }
+
+        public string get_IntstWatchedCount() { }
+
+        public int get_LevelToSet() { }
+
+        public int get_MatchesRequiredIntst() { }
+
+        [CompilerGenerated]
+        public float get_MaxSpinTrackRange() { }
+
+        [CompilerGenerated]
+        public float get_MaxSwipeDiffYX() { }
+
+        [CompilerGenerated]
+        public float get_MaxSwipeTime() { }
+
+        public float get_MenuMusicVolume() { }
+
+        public float get_MidPointHeightMod() { }
+
+        [CompilerGenerated]
+        public float get_MidPointSpinInfluence() { }
+
+        [CompilerGenerated]
+        public float get_MinSpinTrackRange() { }
+
+        [CompilerGenerated]
+        public float get_MinSwipeDistance() { }
+
+        [CompilerGenerated]
+        public float get_MinSwipeTime() { }
+
+        [CompilerGenerated]
+        public int get_MinutesToSimulate() { }
+
+        [CompilerGenerated]
+        public float get_MinVelocityMagnitude() { }
+
+        public string get_OneTimeOfferID() { }
+
+        public string get_OpponentID() { }
+
+        public string get_ParamId() { }
+
+        public string get_ParamSlot() { }
+
+        public string get_PayerStatus() { }
+
+        public float get_PinBounce() { }
+
+        public float get_PinDynamicFriction() { }
+
+        public float get_PinMass() { }
+
+        public float get_PinStaticFriction() { }
+
+        public int get_PinToForce() { }
+
+        public int get_PlayedMatchesInTotal() { }
+
+        public string get_PlayerIdCheck() { }
+
+        [CompilerGenerated]
+        public float get_PowerMax() { }
+
+        [CompilerGenerated]
+        public float get_PowerMin() { }
+
+        [CompilerGenerated]
+        public float get_PowerSwipeMult() { }
+
+        public string get_PurchaseToken() { }
+
+        public QualityLevelTypes get_QualityLevel() { }
+
+        public string get_RoomID() { }
+
+        public bool get_RVsEnabled() { }
+
+        public int get_SeasonIdToSet() { }
+
+        private ISpecialEventsService get_service() { }
+
+        public float get_SideSkewMod() { }
+
+        public bool get_SimulateLag() { }
+
+        public string get_SocialIncentivesRewardId() { }
+
+        public string get_SpecialEventName() { }
+
+        public int get_SpecialEventPoints() { }
+
+        public int get_SpecialEventSplitLayout() { }
+
+        public string get_SpecialOfferStoreId() { }
+
+        public float get_SpinMaxValue() { }
+
+        public bool get_SRPBatchSwitch() { }
+
+        public bool get_StopGameTimer() { }
+
+        [CompilerGenerated]
+        public float get_SwipeInputZRecordMax() { }
+
+        [CompilerGenerated]
+        public float get_SwipeInputZRecordMin() { }
+
+        public bool get_SwitchPhysicsAutoSIM() { }
+
+        public float get_TimeScaleToForce() { }
+
+        [CompilerGenerated]
+        public int get_Tokens() { }
+
+        public float get_TrajectoryRange() { }
+
+        [CompilerGenerated]
+        public float get_TrajectorySwipeMaxSpinWidth() { }
+
+        [CompilerGenerated]
+        public float get_TrajectorySwipeRange() { }
+
+        [CompilerGenerated]
+        public float get_TrajectorySwipeSpinMultiplier() { }
+
+        [CompilerGenerated]
+        public int get_WantedTrophies() { }
+
+        [Category("Inbox")]
+        [DisplayName("GetChatMessagesAsAnyUser")]
+        [Sort(100)]
+        public void GetChatMessagesForPlayer() { }
+
+        [Category("Guilds")]
+        [DisplayName("GetGuild")]
+        [Sort(51)]
+        public void GetGuild() { }
+
+        [Category("Guilds")]
+        [DisplayName("GetGlobalLeaderboard")]
+        [Sort(103)]
+        public void GetGuildGlobalLeaderboard() { }
+
+        [Category("Guilds")]
+        [DisplayName("GetGuildList")]
+        [Sort(102)]
+        public void GetGuildList() { }
+
+        [Category("Guilds")]
+        [DisplayName("GetLocalLeaderboard")]
+        [Sort(104)]
+        public void GetGuildLocalLeaderboard() { }
+
+        [Category("Guilds")]
+        [DisplayName("ForceFriendlyBattlePopup")]
+        [Sort(1000)]
+        public void GuildsForceFriendlyBattlePopup() { }
+
+        [Category("Guilds")]
+        [DisplayName("ForceNextLeague")]
+        [Sort(800)]
+        public void GuildsForceNextLeague() { }
+
+        [Category("Guilds")]
+        [DisplayName("ForceReportGuildsLeagueEndShown")]
+        [Sort(801)]
+        public void GuildsForceReportGuildsLeagueEndShown() { }
+
+        [Category("Guilds")]
+        [DisplayName("ReportGuildsLeagueEndShown")]
+        [Sort(700)]
+        public void GuildsReportGuildsLeagueEndShown() { }
+
+        [Category("Inbox")]
+        [DisplayName("BlacklistUser")]
+        [Sort(40)]
+        public void InboxBlacklistUser() { }
+
+        [Category("Inbox")]
+        [DisplayName("ClaimReward")]
+        [Sort(50)]
+        public void InboxClaimReward() { }
+
+        [Category("Inbox")]
+        [DisplayName("UnBlacklistUser")]
+        [Sort(41)]
+        public void InboxUnBlacklistUser() { }
+
+        [Category("Referrals")]
+        public void IncreaseReferralsLevel() { }
+
+        [Category("Guilds")]
+        [DisplayName("GetGuild")]
+        [Sort(60)]
+        public void JoinGuild() { }
+
+        [Category("Inbox")]
+        [DisplayName("LeaveChat")]
+        [Sort(30)]
+        public void LeaveChat() { }
+
+        [Category("_Networking")]
+        public void LeaveGameInProgress() { }
+
+        [Category("Guilds")]
+        [DisplayName("LeaveGuild")]
+        [Sort(100)]
+        public void LeaveGuild() { }
+
+        [Category("Guilds")]
+        [DisplayName("LeaveGuildAsAnyUser")]
+        [Sort(300)]
+        public void LeaveGuildAsAnyUser() { }
+
+        [Category("Lucky Wheel")]
+        public void ListPremiumRewards() { }
+
+        [Category("Lucky Wheel")]
+        public void ListRewards() { }
+
+        [Category("_SwipeControls")]
+        [Sort(0)]
+        public void LoadCurrentBallSwipeConfig() { }
+
+        private void LogChat(InboxUserData inboxUserData) { }
+
+        private void LogChat(List<InboxChatData> chats) { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("LogCurrentDays")]
+        [Sort(20)]
+        public void LogCurrentDailyRewardsDays() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("LogDateTimeDetails")]
+        [Sort(22)]
+        public void LogDailyRewardsCurrentDateTimeDetails() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("LogDateTimeLastTenDays")]
+        [Sort(22)]
+        public void LogDailyRewardsDateTimeLastTenDays() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("LogDateTimeLastTenHours")]
+        [Sort(22)]
+        public void LogDailyRewardsDateTimeLastTenHours() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("LogEndOfDay")]
+        [Sort(21)]
+        public void LogDailyRewardsEndOfDay() { }
+
+        [Category("Friends")]
+        [DisplayName("LogFriends")]
+        [Sort(20)]
+        public void LogFriends() { }
+
+        private void LogFriends(List<String> friendsIds) { }
+
+        private void LogGuild(GuildData guildData) { }
+
+        [Category("Guilds")]
+        [DisplayName("LogGuild")]
+        [Sort(50)]
+        public void LogGuildId() { }
+
+        [Category("Inbox")]
+        [DisplayName("LogMessages")]
+        [Sort(20)]
+        public void LogMessages() { }
+
+        private void LogSocialIncentivesRewards(List<RewardData> rewards) { }
+
+        [Category("_Special Offers")]
+        [DisplayName("LogUserData")]
+        public void LogSpecialOffersUserData() { }
+
+        [Category("Lucky Wheel")]
+        public void LogUserData() { }
+
+        [Category("_Gameplay")]
+        public void LoseGame() { }
+
+        [Category("Pins")]
+        public void MakeNarrowSplit() { }
+
+        [Category("Pins")]
+        public void MakeSplit() { }
+
+        [Category("Inbox")]
+        [DisplayName("MarkAllMessagesAsRead")]
+        [Sort(26)]
+        public void MarkAllMessagesAsRead() { }
+
+        [Category("Inbox")]
+        [DisplayName("MarkChatAsRead")]
+        [Sort(25)]
+        public void MarkChatAsRead() { }
+
+        [Category("Mystery Rewards")]
+        public void MysteryRewardsCancelReward() { }
+
+        [Category("Mystery Rewards")]
+        public void MysteryRewardsGetReward() { }
+
+        [Category("BattlePass")]
+        public void OnAddExperienceDebug() { }
+
+        public void OnBallSelected(BowlingBallBase ball) { }
+
+        [Category("BattlePass")]
+        public void OnClaimFreeRewardsDebug() { }
+
+        [Category("BattlePass")]
+        public void OnClaimPremiumRewardsDebug() { }
+
+        private void OnGemsRechargeAdded(bool success, object response) { }
+
+        [Category("BattlePass")]
+        public void OnIncreaseLevelDebug() { }
+
+        private void OnMaintenanceStatusReceived(bool succeed, object isMaintenanceOn) { }
+
+        [Category("BattlePass")]
+        public void OnMaxLevelDebug() { }
+
+        private void OnOfferActivated(bool success, object rewards) { }
+
+        public void OnPropertyChanged(string propertyName) { }
+
+        private void OnResetUserData(bool success, object rewards) { }
+
+        [Category("BattlePass")]
+        public void OnResetUserDataDebug() { }
+
+        [Category("BattlePass")]
+        public void OnSeasonIdSetDebug() { }
+
+        [Category("BattlePass")]
+        public void OnSetLevelDebug() { }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType::AfterSceneLoad (0))]
+        public static void OnStartup() { }
+
+        [Category("_Special Offers")]
+        public void OpenDebugOffers() { }
+
+        [Category("_Bowler Quality Progress")]
+        [DisplayName("Override Config Value")]
+        [Sort(3)]
+        [UsedImplicitly]
+        public void OverrideBowlerQualityConfigValue() { }
+
+        [Category("Profile Customization")]
+        public void ParametersAccept() { }
+
+        [Category("Balance")]
+        public void PerfectThrow() { }
+
+        [Category("Haptics")]
+        public void PlayCurrentClipLoop() { }
+
+        [Category("Profile Customization")]
+        public void PlayerParamSet() { }
+
+        [Category("Haptics")]
+        public void PlayHapticPattern() { }
+
+        [Category("_Gameplay")]
+        public void PlayLocalPVP() { }
+
+        [Category("_Gameplay")]
+        public void PlayPractice() { }
+
+        [Category("Guilds")]
+        [DisplayName("PopulateGuilds")]
+        [Sort(611)]
+        public void PopulateGuilds() { }
+
+        [Category("Guilds")]
+        [DisplayName("PopulateGuildsLeague")]
+        [Sort(612)]
+        public void PopulateGuildsLeague() { }
+
+        [Category("Performance")]
+        public void PostProcessChange() { }
+
+        [Category("IAP")]
+        public void PrintFinalizePendingPurchases() { }
+
+        [Category("IAP")]
+        public void PrintPurchasedItemsToken() { }
+
+        [Category("IAP")]
+        public void PrintPurchaseFlows() { }
+
+        [Category("IAP")]
+        public void PrintPurchases() { }
+
+        [Category("IAP")]
+        public void PrintPurchasesInfo(string obj, IPurchase purchase) { }
+
+        private void RefreshAfterDebug() { }
+
+        private void RefreshSeasonAfterDebug() { }
+
+        private void RefreshUI(bool success, object obj) { }
+
+        [Category("Core")]
+        public void ReinitializeCore() { }
+
+        [Category("Friends")]
+        [DisplayName("RejectFriendInvite")]
+        [Sort(23)]
+        public void RejectFriendInvite() { }
+
+        [Category("Friends")]
+        [DisplayName("RejectFriendInviteAsAnyUser")]
+        [Sort(53)]
+        public void RejectFriendInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("RejectInvite")]
+        [Sort(73)]
+        public void RejectGuildInvite() { }
+
+        [Category("Guilds")]
+        [DisplayName("RejectInviteAsAnyUser")]
+        [Sort(273)]
+        public void RejectGuildInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("RejectJoinRequest")]
+        [Sort(76)]
+        public void RejectGuildJoinRequest() { }
+
+        [Category("Guilds")]
+        [DisplayName("RejectJoinRequestAsAnyUser")]
+        [Sort(276)]
+        public void RejectGuildJoinRequestAsAnyUser() { }
+
+        [CompilerGenerated]
+        private void remove_InterfacePropertyChangedEventHandler(PropertyChangedEventHandler value) { }
+
+        [CompilerGenerated]
+        public void remove_PropertyChanged(SROptionsPropertyChanged value) { }
+
+        [Category("Friends")]
+        [DisplayName("RemoveFriend")]
+        [Sort(25)]
+        public void RemoveFriend() { }
+
+        [Category("Friends")]
+        [DisplayName("RemoveFriendAsAnyUser")]
+        [Sort(55)]
+        public void RemoveFriendAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("RemoveMember")]
+        [Sort(111)]
+        public void RemoveMember() { }
+
+        [Category("Guilds")]
+        [DisplayName("RemoveMemberAsAnyUser")]
+        [Sort(311)]
+        public void RemoveMemberAsAnyUser() { }
+
+        [Category("Inbox")]
+        [DisplayName("RequestChatMessages")]
+        [Sort(22)]
+        public void RequestChatMessages() { }
+
+        [Category("Inbox")]
+        [DisplayName("RequestInboxUserData")]
+        [Sort(21)]
+        public void RequestInboxUserData() { }
+
+        [Category("Daily Missions")]
+        public void RerollPremiumMission() { }
+
+        [Category("Tutorial")]
+        public void ResetAccuracyTutorial() { }
+
+        [Category("Achievements")]
+        [DisplayName("ResetUserData")]
+        public void ResetAchievementsUserData() { }
+
+        [Category("Audio")]
+        public void ResetAllClips() { }
+
+        [Category("Daily Missions")]
+        public void ResetAvailableRefills() { }
+
+        [IteratorStateMachine(typeof(<ResetBallCoro>d__754))]
+        private IEnumerator ResetBallCoro() { }
+
+        [Category("Performance")]
+        public void ResetBenchmark() { }
+
+        [Category("GemsSubscription")]
+        public void ResetClaimedDailyRewards() { }
+
+        [Category("Components")]
+        public void ResetComponentsToStarters() { }
+
+        [Category("Balance")]
+        public void ResetCurrentBall() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("ResetSeenToday")]
+        [Sort(30)]
+        public void ResetDailyRewardSeenToday() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("ResetUserData")]
+        [Sort(1)]
+        public void ResetDailyRewardsUserData() { }
+
+        [Category("Tutorial")]
+        public void ResetEventsTutorials() { }
+
+        [Category("SpecialChests")]
+        public void ResetFreeChestUserData() { }
+
+        [Category("SpecialChests")]
+        [UsedImplicitly]
+        public void ResetFreeChestUserDataSoon() { }
+
+        [Category("Friends")]
+        [DisplayName("ResetUserData")]
+        [Sort(200)]
+        public void ResetFriendsUserData() { }
+
+        [Category("Guilds")]
+        [DisplayName("ResetUserData")]
+        [Sort(200)]
+        public void ResetGuildsUserData() { }
+
+        [Category("Inbox")]
+        [DisplayName("ResetUserData")]
+        [Sort(200)]
+        public void ResetInboxUserData() { }
+
+        [Category("VideoAds")]
+        public void ResetIntstOfferSchedule() { }
+
+        [Category("_Progression")]
+        public void ResetLoseStreaks() { }
+
+        [Category("_Progression")]
+        public void ResetMatchesOnArenasCounter() { }
+
+        [Category("Tutorial")]
+        public void ResetMenuBaseTutorial() { }
+
+        [Category("Balance-PINS")]
+        public void ResetPins() { }
+
+        [IteratorStateMachine(typeof(<ResetPinsCoro>d__809))]
+        private IEnumerator ResetPinsCoro() { }
+
+        [Category("Tutorial")]
+        public void ResetPitcherTutorial() { }
+
+        [Category("_RateUs")]
+        public void ResetRateUsWindow() { }
+
+        [Category("Referrals")]
+        public void ResetReferralsUserData() { }
+
+        [Category("Components")]
+        public void ResetSeenComponents() { }
+
+        [Category("_Vanity")]
+        public void ResetSeenVanities() { }
+
+        [Category("Skillshot")]
+        [UsedImplicitly]
+        public void ResetSkillshotSoon() { }
+
+        [Category("SocialIncentives")]
+        [DisplayName("ResetUserData")]
+        [Sort(200)]
+        public void ResetSocialIncentivesUserData() { }
+
+        [Category("_Special Offers")]
+        [DisplayName("ResetUserData")]
+        public void ResetSpecialOffersUserData() { }
+
+        [Category("_Progression")]
+        public void ResetTestProgression() { }
+
+        [IteratorStateMachine(typeof(<ResetTimeCoro>d__819))]
+        private IEnumerator ResetTimeCoro() { }
+
+        [Category("TriviaRoad")]
+        [UsedImplicitly]
+        public void ResetTriviaRoadUserData() { }
+
+        [Category("Upselling")]
+        public void ResetUpsellingOffer() { }
+
+        [Category("Lucky Wheel")]
+        public void ResetUserData() { }
+
+        [Category("_Progression")]
+        public void ResetWinStreaks() { }
+
+        [Category("Skillshot")]
+        public void RestartSkillshot() { }
+
+        [Category("GemsSubscription")]
+        public void RestoreAppBundle() { }
+
+        [Category("Components")]
+        public void RevertComponentsToLevel1() { }
+
+        [Category("_Vanity")]
+        public void RevertVanitiesToStarters() { }
+
+        [Category("GemsSubscription")]
+        public void RewindActivation24H() { }
+
+        [Category("GemsSubscription")]
+        public void RewindActivationMinutes() { }
+
+        private void SaveData(bool force = false) { }
+
+        [Category("Inbox")]
+        [DisplayName("SendChatMessage")]
+        [Sort(23)]
+        public void SendChatMessage() { }
+
+        [Category("Inbox")]
+        [DisplayName("SendChatMessageAsAnyUser")]
+        [Sort(101)]
+        public void SendChatMessageAsAnyUser() { }
+
+        [Category("Friends")]
+        [DisplayName("SendFriendInvite")]
+        [Sort(21)]
+        public void SendFriendInvite() { }
+
+        [Category("Friends")]
+        [DisplayName("SendFriendInviteAsAnyUser")]
+        [Sort(51)]
+        public void SendFriendInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendInvite")]
+        [Sort(70)]
+        public void SendGuildInvite() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendInviteAsAnyUser")]
+        [Sort(270)]
+        public void SendGuildInviteAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendJoinRequest")]
+        [Sort(74)]
+        public void SendGuildJoinRequest() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendJoinRequestAsAnyUser")]
+        [Sort(274)]
+        public void SendGuildJoinRequestAsAnyUser() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendMessage")]
+        [Sort(120)]
+        public void SendGuildMessage() { }
+
+        [Category("Guilds")]
+        [DisplayName("SendMessageAsAnyUser")]
+        [Sort(320)]
+        public void SendGuildMessageAsAnyUser() { }
+
+        [Category("SE")]
+        [Sort(15)]
+        public void SendResult() { }
+
+        public void set_ABTestGroupNumber(int value) { }
+
+        public void set_ABTestName(string value) { }
+
+        public void set_ABTestSource(ABTestSource value) { }
+
+        public void set_ABTestVariant(string value) { }
+
+        public void set_AccuracyTrajectoryRange(float value) { }
+
+        [CompilerGenerated]
+        public void set_AchievementId(string value) { }
+
+        public void set_ActiveNicknamePresetId(string value) { }
+
+        public void set_AimOffsetAdjustmentCap(float value) { }
+
+        public void set_AimOffsetAdjustmentStep(float value) { }
+
+        public void set_AimOffsetAdjustmentStepValue(float value) { }
+
+        [CompilerGenerated]
+        public void set_AllowedSwipeAngleThreshold(float value) { }
+
+        public void set_AlmediaVerboseLogs(bool value) { }
+
+        [CompilerGenerated]
+        public void set_ArenaIdForBowlerQuality(int value) { }
+
+        public void set_AutoPickup(bool value) { }
+
+        public void set_AvailableNicknamePresetIds(string value) { }
+
+        public void set_BallBounciness(float value) { }
+
+        public void set_BallDynamicFriction(float value) { }
+
+        public void set_BallInitialSpeed(float value) { }
+
+        public void set_BallMass(float value) { }
+
+        public void set_BallStaticFriction(float value) { }
+
+        public void set_BallType(BowlingBallType value) { }
+
+        public void set_BodySize(float value) { }
+
+        [CompilerGenerated]
+        public void set_BowlerQualityPoints(int value) { }
+
+        public void set_ChangeTrajectory(GameplayModes value) { }
+
+        public void set_ChosenProduct(string value) { }
+
+        public void set_CurrencyChange(int value) { }
+
+        public void set_CurrencyCode(string value) { }
+
+        public void set_CurrentClip(PresetType value) { }
+
+        [CompilerGenerated]
+        public void set_DailyRewardsDaysAgo(int value) { }
+
+        [CompilerGenerated]
+        public void set_DayStreak(int value) { }
+
+        [CompilerGenerated]
+        public void set_DebugSwipeLineMode(bool value) { }
+
+        [CompilerGenerated]
+        public void set_DebugTrajectoryMode(bool value) { }
+
+        public void set_DevMatchmaking(bool value) { }
+
+        public void set_Diff(string value) { }
+
+        public void set_DynamicBatchingSwitch(bool value) { }
+
+        [CompilerGenerated]
+        public void set_EnableSwipeSpin(bool value) { }
+
+        [CompilerGenerated]
+        public void set_EndPointSpinInfluence(float value) { }
+
+        [CompilerGenerated]
+        public void set_EndPointXClamp(float value) { }
+
+        [CompilerGenerated]
+        public void set_EndPointXMultiplier(float value) { }
+
+        public void set_EndSkewMod(float value) { }
+
+        public void set_FakeFriendSenderId(string value) { }
+
+        public void set_FakeGuildSenderId(string value) { }
+
+        public void set_FirstControlsSet(bool value) { }
+
+        public void set_ForceAimOffset(bool value) { }
+
+        public void set_ForceArena(bool value) { }
+
+        public void set_ForceAutoPickup(bool value) { }
+
+        public void set_ForceBot(bool value) { }
+
+        public void set_ForceCallbackAwait(bool value) { }
+
+        public void set_ForcedAimOffset(float value) { }
+
+        public void set_ForcedAllStandardTieBreakerRound(bool value) { }
+
+        public void set_ForcedAlternativeText(int value) { }
+
+        public void set_ForcedArena(int value) { }
+
+        public void set_ForcedBall(bool value) { }
+
+        public void set_ForcedDrawInRound(bool value) { }
+
+        public void set_ForcedPinLayout(LayoutType value) { }
+
+        public void set_ForcedSplit(bool value) { }
+
+        public void set_ForcedStrikeInRow(int value) { }
+
+        public void set_ForcedThrowResult(ThrowResult value) { }
+
+        public void set_ForceGadsmeAds(bool value) { }
+
+        public void set_ForceInterstitial(bool value) { }
+
+        public void set_ForceMulti(bool value) { }
+
+        public void set_ForcePinLayout(bool value) { }
+
+        public void set_ForceThrowResult(bool value) { }
+
+        public void set_ForceTimeScale(bool value) { }
+
+        public void set_FriendTargetId(string value) { }
+
+        public void set_GameAmbientVolume(float value) { }
+
+        public void set_GameMusicVolume(float value) { }
+
+        public void set_GaugeFactorMax(float value) { }
+
+        public void set_GaugeFactorMin(float value) { }
+
+        public void set_GemsToRecharge(int value) { }
+
+        public void set_GildPattern(string value) { }
+
+        public void set_GuildBadgeBg(int value) { }
+
+        public void set_GuildBadgeIcon(int value) { }
+
+        public void set_GuildBadgeLayout(int value) { }
+
+        public void set_GuildBadgeText(string value) { }
+
+        public void set_GuildCountry(string value) { }
+
+        public void set_GuildDesc(string value) { }
+
+        public void set_GuildId(string value) { }
+
+        public void set_GuildInviteeId(string value) { }
+
+        public void set_GuildMemberId(string value) { }
+
+        public void set_GuildMessage(string value) { }
+
+        public void set_GuildName(string value) { }
+
+        public void set_GuildRequesterId(string value) { }
+
+        public void set_GuildRole(GuildRole value) { }
+
+        public void set_GuildsMembers(int value) { }
+
+        public void set_GuildsNumber(int value) { }
+
+        public void set_GuildsStartScore(int value) { }
+
+        public void set_GuildTargetId(string value) { }
+
+        public void set_GuildTimestamp(int value) { }
+
+        public void set_InboxChatHash(string value) { }
+
+        public void set_InboxFakePlayerId(string value) { }
+
+        public void set_InboxMessage(string value) { }
+
+        public void set_InboxRecipientId(string value) { }
+
+        public void set_InboxTimestamp(int value) { }
+
+        [CompilerGenerated]
+        public void set_InputFirstTrimFrameRangeNorm(float value) { }
+
+        [CompilerGenerated]
+        public void set_InputSecondTrimFrameRangeNorm(float value) { }
+
+        public void set_IntstAfterLostGame(bool value) { }
+
+        public void set_IntstAfterRV(bool value) { }
+
+        public void set_IntstAfterShowHideWnds(bool value) { }
+
+        public void set_IntstAfterWonGame(bool value) { }
+
+        public void set_IntstCooldown(float value) { }
+
+        public void set_IntstDisabledForPayers(bool value) { }
+
+        public void set_IntstEnabled(bool value) { }
+
+        public void set_LevelToSet(int value) { }
+
+        public void set_MatchesRequiredIntst(int value) { }
+
+        [CompilerGenerated]
+        public void set_MaxSpinTrackRange(float value) { }
+
+        [CompilerGenerated]
+        public void set_MaxSwipeDiffYX(float value) { }
+
+        [CompilerGenerated]
+        public void set_MaxSwipeTime(float value) { }
+
+        public void set_MenuMusicVolume(float value) { }
+
+        public void set_MidPointHeightMod(float value) { }
+
+        [CompilerGenerated]
+        public void set_MidPointSpinInfluence(float value) { }
+
+        [CompilerGenerated]
+        public void set_MinSpinTrackRange(float value) { }
+
+        [CompilerGenerated]
+        public void set_MinSwipeDistance(float value) { }
+
+        [CompilerGenerated]
+        public void set_MinSwipeTime(float value) { }
+
+        [CompilerGenerated]
+        public void set_MinutesToSimulate(int value) { }
+
+        [CompilerGenerated]
+        public void set_MinVelocityMagnitude(float value) { }
+
+        public void set_OneTimeOfferID(string value) { }
+
+        public void set_OpponentID(string value) { }
+
+        public void set_ParamId(string value) { }
+
+        public void set_ParamSlot(string value) { }
+
+        public void set_PinBounce(float value) { }
+
+        public void set_PinDynamicFriction(float value) { }
+
+        public void set_PinMass(float value) { }
+
+        public void set_PinStaticFriction(float value) { }
+
+        public void set_PinToForce(int value) { }
+
+        public void set_PlayerIdCheck(string value) { }
+
+        [CompilerGenerated]
+        public void set_PowerMax(float value) { }
+
+        [CompilerGenerated]
+        public void set_PowerMin(float value) { }
+
+        [CompilerGenerated]
+        public void set_PowerSwipeMult(float value) { }
+
+        public void set_PurchaseToken(string value) { }
+
+        public void set_QualityLevel(QualityLevelTypes value) { }
+
+        public void set_RoomID(string value) { }
+
+        public void set_RVsEnabled(bool value) { }
+
+        public void set_SeasonIdToSet(int value) { }
+
+        public void set_SideSkewMod(float value) { }
+
+        public void set_SimulateLag(bool value) { }
+
+        public void set_SocialIncentivesRewardId(string value) { }
+
+        public void set_SpecialEventName(string value) { }
+
+        public void set_SpecialEventPoints(int value) { }
+
+        public void set_SpecialEventSplitLayout(int value) { }
+
+        public void set_SpecialOfferStoreId(string value) { }
+
+        public void set_SpinMaxValue(float value) { }
+
+        public void set_SRPBatchSwitch(bool value) { }
+
+        public void set_StopGameTimer(bool value) { }
+
+        [CompilerGenerated]
+        public void set_SwipeInputZRecordMax(float value) { }
+
+        [CompilerGenerated]
+        public void set_SwipeInputZRecordMin(float value) { }
+
+        public void set_SwitchPhysicsAutoSIM(bool value) { }
+
+        public void set_TimeScaleToForce(float value) { }
+
+        [CompilerGenerated]
+        public void set_Tokens(int value) { }
+
+        public void set_TrajectoryRange(float value) { }
+
+        [CompilerGenerated]
+        public void set_TrajectorySwipeMaxSpinWidth(float value) { }
+
+        [CompilerGenerated]
+        public void set_TrajectorySwipeRange(float value) { }
+
+        [CompilerGenerated]
+        public void set_TrajectorySwipeSpinMultiplier(float value) { }
+
+        [CompilerGenerated]
+        public void set_WantedTrophies(int value) { }
+
+        [Category("Profile Customization")]
+        public void SetActiveNicknamePresetId() { }
+
+        [Category("Profile Customization")]
+        public void SetAvailableNicknamePresetIds() { }
+
+        [Category("Daily Rewards")]
+        [DisplayName("SetDayStreak")]
+        [Sort(3)]
+        public void SetDayStreak() { }
+
+        [Category("_Progression")]
+        public void SetWantedTrophies() { }
+
+        [Category("Performance")]
+        public void ShadowChange() { }
+
+        [Category("Performance")]
+        public void ShowFps() { }
+
+        [Category("Guilds")]
+        [DisplayName("ShowGuildRanksInfoWindow")]
+        [Sort(500)]
+        public void ShowGuildRanksInfoWindow() { }
+
+        [Category("VideoAds")]
+        public void ShowInterstitialOfferWnd() { }
+
+        [Category("VideoAds")]
+        public void ShowRemoveAdsWnd() { }
+
+        [Category("_Networking")]
+        public void ShowStats() { }
+
+        [Category("Upselling")]
+        public void ShowUpsellingWindow() { }
+
+        [Category("Victory chest")]
+        public void ShowVictoryChest() { }
+
+        [Category("SocialIncentives")]
+        [DisplayName("ClaimReward")]
+        [Sort(51)]
+        public void SocialIncentivesClaimReward() { }
+
+        [Category("Inbox")]
+        [DisplayName("SpamInbox")]
+        [Sort(200)]
+        public void SpamInbox() { }
+
+        [Category("_Special Offers")]
+        [DisplayName("SetAsSeen")]
+        public void SpecialOffersSetAsSeen() { }
+
+        [Category("GemsSubscription")]
+        public void StartBundleGemsSubscription() { }
+
+        private void StartGemsSubscription(string subscriptionId) { }
+
+        [Category("GemsSubscription")]
+        public void StartGemsSubscription() { }
+
+        [Category("Subscription")]
+        public void StartMonthlySubscription() { }
+
+        private void StartSubscription(string subscriptionId) { }
+
+        [Category("Subscription")]
+        public void StartTrailSubscription() { }
+
+        [Category("TriviaRoad")]
+        [UsedImplicitly]
+        public void StartTriviaOfferNow() { }
+
+        [Category("Subscription")]
+        public void StartWeeklySubscription() { }
+
+        [Category("GemsSubscription")]
+        public void StopGemsSubscription() { }
+
+        [Category("Haptics")]
+        public void StopHaptics() { }
+
+        [Category("Subscription")]
+        public void StopSubscription() { }
+
+        [Category("SE")]
+        [Sort(14)]
+        public void SubtractTickets() { }
+
+        private override void System.ComponentModel.INotifyPropertyChanged.add_PropertyChanged(PropertyChangedEventHandler value) { }
+
+        private override void System.ComponentModel.INotifyPropertyChanged.remove_PropertyChanged(PropertyChangedEventHandler value) { }
+
+        [Category("Seasons")]
+        public void TriggerSeasonResultWindow() { }
+
+        [Category("Ui")]
+        public void TriggerTryShowPopup() { }
+
+        [Category("_Backend")]
+        public void TryBuyChosenProduct() { }
+
+        private void TryBuyGemsSubscription(string subscriptionId) { }
+
+        [Category("GemsSubscription")]
+        public void TryBuyGemsSubscription() { }
+
+        [Category("Subscription")]
+        public void TryBuyMonthlySubscription() { }
+
+        private void TryBuySubscription(string subscriptionId) { }
+
+        [Category("Subscription")]
+        public void TryBuyWeeklySubscription() { }
+
+        [Category("OneTimeOffers")]
+        public void TryOpenOneTimeOfferWindow() { }
+
+        [Category("_Backend")]
+        public void UnlinkBackendAccount() { }
+
+        [Category("_Backend")]
+        public void UnlinkBackendServices() { }
+
+        [AsyncStateMachine(typeof(<UnlinkBackendServicesAsync>d__50))]
+        private void UnlinkBackendServicesAsync() { }
+
+        [Category("Components")]
+        public void UnlockAllComponents() { }
+
+        [Category("Emotes")]
+        [UsedImplicitly]
+        public void UnlockAllEmotes() { }
+
+        [Category("Guilds")]
+        [DisplayName("UpdateGuild")]
+        [Sort(102)]
+        public void UpdateGuild() { }
+
+        [Category("Guilds")]
+        [DisplayName("UpdateGuildAsAnyUser")]
+        [Sort(302)]
+        public void UpdateGuildAsAnyUser() { }
+
+        private void UpdateTimeScale() { }
+
+        [Category("_Vanity")]
+        public void VanityUnlock() { }
+
+        [Category("_Vanity")]
+        public void VanityUnlockReleased() { }
+
+        [Category("_Gameplay")]
+        public void WalkoverLoseGame() { }
+
+        [Category("_Gameplay")]
+        public void WalkoverWinGame() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("Connect")]
+        public void WebPubSubConnect() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("Disconnect")]
+        public void WebPubSubDisconnect() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("JoinGroup")]
+        public void WebPubSubJoinGroup() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("LeaveGroup")]
+        public void WebPubSubLeaveGroup() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("SendToGroup")]
+        public void WebPubSubSendToGroup() { }
+
+        [Category("WebPubSub")]
+        [DisplayName("SendToUser")]
+        public void WebPubSubSendToUser() { }
+
+        [Category("_Gameplay")]
+        public void WinGame() { }
+
+}
+
+namespace Services.Game;
+
+public sealed class GameplayConfigsProviderService : ICoreService, ICoreServiceBase
+{
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass72_0
+        {
+                public BowlingBallType type; //Field offset: 0x10
+
+                public <>c__DisplayClass72_0() { }
+
+                internal bool <GetBallParameters>b__0(BallParameters x) { }
+
+        }
+
+        [CompilerGenerated]
+        private sealed class <>c__DisplayClass74_0
+        {
+                public LayoutType layoutType; //Field offset: 0x10
+
+                public <>c__DisplayClass74_0() { }
+
+                internal bool <GetSplitsPinLayoutData>b__0(PinsSplitLayout x) { }
+
+        }
+
+        public LayoutType currentLayoutType; //Field offset: 0x10
+        public PinsInfo[] currentPinsInfo; //Field offset: 0x18
+        public bool forcePinLayout; //Field offset: 0x20
+        public LayoutType forcedPinLayout; //Field offset: 0x24
+        public bool forceArena; //Field offset: 0x28
+        public int forcedArena; //Field offset: 0x2C
+        public BowlingBallType forcedBallType; //Field offset: 0x30
+        public bool forceDrawInRound; //Field offset: 0x34
+        public bool forcedAllStandardTieBreakerRound; //Field offset: 0x35
+        public bool forcedBall; //Field offset: 0x36
+        public bool forcedSplit; //Field offset: 0x37
+        public bool forceThrowResult; //Field offset: 0x38
+        public ThrowResult forcedThrowResult; //Field offset: 0x3C
+        public int forcedStrikeInRow; //Field offset: 0x40
+        public int forcedAlternativeText; //Field offset: 0x44
+        public bool forceGadsmeAds; //Field offset: 0x48
+        public float swipeMaxAngleCorrection; //Field offset: 0x4C
+        [CompilerGenerated]
+        private bool <IsInitialized>k__BackingField; //Field offset: 0x50
+        [CompilerGenerated]
+        private GameplayParametersConfig <gameplayParameters>k__BackingField; //Field offset: 0x58
+        [CompilerGenerated]
+        private GameplayBallsConfig <ballsConfig>k__BackingField; //Field offset: 0x60
+        [CompilerGenerated]
+        private GameplayTrajectoryConfig <trajectoryParameters>k__BackingField; //Field offset: 0x68
+        [CompilerGenerated]
+        private GameplayCameraParametersConfig <cameraParameters>k__BackingField; //Field offset: 0x70
+        [CompilerGenerated]
+        private GameplayCameraParametersConfig <swipeControlsCameraParameters>k__BackingField; //Field offset: 0x78
+        [CompilerGenerated]
+        private GameplayCameraParametersConfig <skillshotCameraParameters>k__BackingField; //Field offset: 0x80
+        [CompilerGenerated]
+        private GameplayPinsConfig <gameplayPinsConfig>k__BackingField; //Field offset: 0x88
+        [CompilerGenerated]
+        private ScoreAnnouncerConfig <scoreAnnouncerConfig>k__BackingField; //Field offset: 0x90
+        [CompilerGenerated]
+        private PinsLayoutConfig <pinsLayoutConfig>k__BackingField; //Field offset: 0x98
+        [CompilerGenerated]
+        private PinsCubesConfig <pinsCubesConfig>k__BackingField; //Field offset: 0xA0
+        [CompilerGenerated]
+        private GameplayGradientsConfig <gradientsConfig>k__BackingField; //Field offset: 0xA8
+        [CompilerGenerated]
+        private GameIntroAnimationConfig <introAnimationParameters>k__BackingField; //Field offset: 0xB0
+        private GameControlsService controlsService; //Field offset: 0xB8
+
+        public private GameplayBallsConfig ballsConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayCameraParametersConfig cameraParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayParametersConfig gameplayParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayPinsConfig gameplayPinsConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayGradientsConfig gradientsConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameIntroAnimationConfig introAnimationParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public override bool IsInitialized
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                 set { } //Length: 8
+        }
+
+        public private PinsCubesConfig pinsCubesConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private PinsLayoutConfig pinsLayoutConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private ScoreAnnouncerConfig scoreAnnouncerConfig
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayCameraParametersConfig skillshotCameraParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayCameraParametersConfig swipeControlsCameraParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public private GameplayTrajectoryConfig trajectoryParameters
+        {
+                [CompilerGenerated]
+                 get { } //Length: 8
+                [CompilerGenerated]
+                private set { } //Length: 8
+        }
+
+        public GameplayConfigsProviderService() { }
+
+        public override void Deinitialize() { }
+
+        [CompilerGenerated]
+        public GameplayBallsConfig get_ballsConfig() { }
+
+        [CompilerGenerated]
+        public GameplayCameraParametersConfig get_cameraParameters() { }
+
+        [CompilerGenerated]
+        public GameplayParametersConfig get_gameplayParameters() { }
+
+        [CompilerGenerated]
+        public GameplayPinsConfig get_gameplayPinsConfig() { }
+
+        [CompilerGenerated]
+        public GameplayGradientsConfig get_gradientsConfig() { }
+
+        [CompilerGenerated]
+        public GameIntroAnimationConfig get_introAnimationParameters() { }
+
+        [CompilerGenerated]
+        public override bool get_IsInitialized() { }
+
+        [CompilerGenerated]
+        public PinsCubesConfig get_pinsCubesConfig() { }
+
+        [CompilerGenerated]
+        public PinsLayoutConfig get_pinsLayoutConfig() { }
+
+        [CompilerGenerated]
+        public ScoreAnnouncerConfig get_scoreAnnouncerConfig() { }
+
+        [CompilerGenerated]
+        public GameplayCameraParametersConfig get_skillshotCameraParameters() { }
+
+        [CompilerGenerated]
+        public GameplayCameraParametersConfig get_swipeControlsCameraParameters() { }
+
+        [CompilerGenerated]
+        public GameplayTrajectoryConfig get_trajectoryParameters() { }
+
+        public BallParameters GetBallParameters(BowlingBallType type) { }
+
+        public GameplayCameraParametersConfig GetGameplayCameraConfig(string dataGameplayCamConfig) { }
+
+        public PinsLayout GetPinLayoutData(LayoutType layoutType) { }
+
+        public List<PinsSplitLayout> GetSplitsPinLayoutData(LayoutType layoutType) { }
+
+        public override void Initialize() { }
+
+        [CompilerGenerated]
+        private void set_ballsConfig(GameplayBallsConfig value) { }
+
+        [CompilerGenerated]
+        private void set_cameraParameters(GameplayCameraParametersConfig value) { }
+
+        [CompilerGenerated]
+        private void set_gameplayParameters(GameplayParametersConfig value) { }
+
+        [CompilerGenerated]
+        private void set_gameplayPinsConfig(GameplayPinsConfig value) { }
+
+        [CompilerGenerated]
+        private void set_gradientsConfig(GameplayGradientsConfig value) { }
+
+        [CompilerGenerated]
+        private void set_introAnimationParameters(GameIntroAnimationConfig value) { }
+
+        [CompilerGenerated]
+        public void set_IsInitialized(bool value) { }
+
+        [CompilerGenerated]
+        private void set_pinsCubesConfig(PinsCubesConfig value) { }
+
+        [CompilerGenerated]
+        private void set_pinsLayoutConfig(PinsLayoutConfig value) { }
+
+        [CompilerGenerated]
+        private void set_scoreAnnouncerConfig(ScoreAnnouncerConfig value) { }
+
+        [CompilerGenerated]
+        private void set_skillshotCameraParameters(GameplayCameraParametersConfig value) { }
+
+        [CompilerGenerated]
+        private void set_swipeControlsCameraParameters(GameplayCameraParametersConfig value) { }
+
+        [CompilerGenerated]
+        private void set_trajectoryParameters(GameplayTrajectoryConfig value) { }
+
+}
+
+namespace UI.Windows;
+
+public class GameScoreView : BaseWindowViewPart
+{
+        [DIInject]
+        private GameplayStateData stateData; //Field offset: 0x30
+        [DIInject]
+        private GameplaySpecialEventData specialEventData; //Field offset: 0x38
+        [DIInject]
+        private GameplayTutorialData tutorialData; //Field offset: 0x40
+        [Header("References")]
+        [SerializeField]
+        private LocalizedTextMeshProUgui scoreText; //Field offset: 0x48
+        [SerializeField]
+        [Space]
+        private GameResultAnimationsView resultAnimationsView; //Field offset: 0x50
+        [Header("In game prameters")]
+        [SerializeField]
+        private bool forceThrowResult; //Field offset: 0x58
+        [SerializeField]
+        private ThrowResult forcedThrowResult; //Field offset: 0x5C
+        [SerializeField]
+        private int forcedNumberStrikeInRow; //Field offset: 0x60
+        [FormerlySerializedAs("alternativeText")]
+        [Header("0-random, 1-false, 2-true")]
+        [Range(0, 2)]
+        [SerializeField]
+        private int forceAlternativeText; //Field offset: 0x64
+        private ScoreAnnouncerConfig scoreAnnouncerConfig; //Field offset: 0x68
+        private GameplayGradientsConfig gradientsConfig; //Field offset: 0x70
+        private GameplayScoreAnnouncerService scoreAnnouncerService; //Field offset: 0x78
+        private ThrowResult throwResult; //Field offset: 0x80
+        private int points; //Field offset: 0x84
+        private int allRoundPoints; //Field offset: 0x88
+        private int resultsInRow; //Field offset: 0x8C
+        private TweenCallback callback; //Field offset: 0x90
+
+        public GameScoreView() { }
+
+        public void Clear() { }
+
+        private void HandleDefinedPoints(int definedPoints) { }
+
+        private void HandleDisplay() { }
+
+        private void HandleFoul() { }
+
+        private void HandleJustHit() { }
+
+        private void HandleMiss() { }
+
+        private void HandleSpare() { }
+
+        private void HandleSplit() { }
+
+        private void HandleStrike() { }
+
+        [UsedImplicitly]
+        public void PlayResultAudio(string name) { }
+
+        [UsedImplicitly]
+        public void PlayStrikeAudio() { }
+
+        private void SetGradient(TMP_ColorGradient gradient) { }
+
+        private void SetStartParameters() { }
+
+        public void ShowScoreText(ThrowResult throwResult, int points = 0, TweenCallback callback = null, int allRoundPoints = 0) { }
+
+        public void ShowText(string text, float fontSize, string animationKey, TweenCallback callback = null) { }
+
+        public void StartGame(IDIContainer diContainer, object diContext) { }
+
+}
+
+namespace Systems.Game;
+
+public sealed class GameplayStateData
+{
+        public NetworkedData networkedData; //Field offset: 0x10
+        public bool IsProcessingPossessionTimeEnded; //Field offset: 0x18
+        public bool StopTime; //Field offset: 0x19
+        public bool IsSomethingControlsTimeScale; //Field offset: 0x1A
+        public ObscuredBool forceStopTimer; //Field offset: 0x1C
+        public int NumberOfRounds; //Field offset: 0x28
+        public bool GameResultReported; //Field offset: 0x2C
+        public GameModeNames gameMode; //Field offset: 0x30
+        public GameplayStates gameplayStates; //Field offset: 0x34
+        public BallStates ballStates; //Field offset: 0x38
+        public ThrowResult lastThrowResult; //Field offset: 0x3C
+        public int lastScore; //Field offset: 0x40
+        public int totalPins; //Field offset: 0x44
+        public int totalStrikes; //Field offset: 0x48
+        public int totalSpares; //Field offset: 0x4C
+        public int totalSplits; //Field offset: 0x50
+        public int totalPerfects; //Field offset: 0x54
+        public int slowMoApplied; //Field offset: 0x58
+        public int totalEmotesSent; //Field offset: 0x5C
+        public PlayerType WhoThrowsFirst; //Field offset: 0x60
+        public PlayerType WhoThrowsNow; //Field offset: 0x64
+        public ObscuredBool ArenaIntroPlayed; //Field offset: 0x68
+        public float ResultWindowTime; //Field offset: 0x74
+        public ObscuredBool HasPossessionTimeLimit; //Field offset: 0x78
+        public ObscuredFloat PossessionTimer; //Field offset: 0x84
+        public ObscuredFloat AnimationTimer; //Field offset: 0x98
+        public ObscuredFloat PossessionLength; //Field offset: 0xAC
+        public bool CanCallToAction; //Field offset: 0xC0
+        public ObscuredFloat CallToActionTimer; //Field offset: 0xC4
+        public ObscuredInt CurrentRoundIndex; //Field offset: 0xD8
+        public bool FirstMoveOfFirstPlayerInRound; //Field offset: 0xE8
+        public int LastChosenBall; //Field offset: 0xEC
+        public ObscuredInt CurrentTurnIndex; //Field offset: 0xF0
+        public ObscuredInt CurrentPlayerRoundIndex; //Field offset: 0x100
+        public ObscuredInt CurrentOpponentTurnIndex; //Field offset: 0x110
+        public ObscuredInt CurrentOpponentRoundIndex; //Field offset: 0x120
+        public List<GameRoundData> PlayerRoundsData; //Field offset: 0x130
+        public List<GameRoundData> EnemyRoundsData; //Field offset: 0x138
+        public WalkoverResult walkoverResult; //Field offset: 0x140
+        public bool walkoverSend; //Field offset: 0x144
+        public GameplayPlayerData playerData; //Field offset: 0x148
+        public GameplayPlayerData opponentData; //Field offset: 0x150
+        public int emoteResponseTimes; //Field offset: 0x158
+        public Dictionary<Int32, Int32> throwAttempts; //Field offset: 0x160
+        private bool lastThrowAttempAdd; //Field offset: 0x168
+        public AiForcedThrows forcedAiThrows; //Field offset: 0x170
+        public bool skipFirstRoundInit; //Field offset: 0x178
+        public bool skipFirstTurnInit; //Field offset: 0x179
+        public bool waitingForTurnEnd; //Field offset: 0x17A
+
+        public GameplayStateData() { }
+
+        public void AddAdditionalPoints(PlayerType playerType, int round, int points) { }
+
+        public void AddPoints(PlayerType playerType, int round, int points, ThrowResult result, float throwTime = 0) { }
+
+        public void AddThrowAttempt(int attempts, int roundNo) { }
+
+        public bool CanEnableInput() { }
+
+        public void ClearThrowAttempts() { }
+
+        public GameRoundData GetCurrentRoundData(PlayerType playerType) { }
+
+        public float GetLastPlayerThrowTime(PlayerType playerType) { }
+
+        public string GetPointsArrayAsString(PlayerType playerType, bool includeTiebreaker = true, string delimiter = ";", string roundDelimiter = "|") { }
+
+        public int GetPointsSum(PlayerType playerType, bool includeTiebreaker = true) { }
+
+        public int GetPointsSumFromRound(PlayerType playerType, int round) { }
+
+        public int GetPointsSumTillRound(PlayerType playerType, int round) { }
+
+        public int GetResultsNumberInRow(PlayerType playerType, ThrowResult throwResult) { }
+
+        public int GetRound(PlayerType playerType) { }
+
+        public GameRoundData GetRoundData(PlayerType playerType, int roundIndex) { }
+
+        public int GetThrowAttempt(int roundNo) { }
+
+        public string GetThrowResultArrayAsString(PlayerType playerType, bool includeTiebreaker = true, string delimiter = ";", string roundDelimiter = "|") { }
+
+        public int GetTurn(PlayerType playerType) { }
+
+        public bool IsDraw() { }
+
+        public WalkoverResult WalkoverResult() { }
+
+        public EloWinner WhoIsWinning() { }
+
+        public EloWinner WhoThrewFaster() { }
+
+}
+
+namespace Systems.Game;
+
+public enum ThrowResult : int
+{
+        None = 0,
+        STRIKE = 1,
+        SPARE = 2,
+        SPLIT = 3,
+        FOUL = 4,
+        MISS = 5,
+        JUST_HIT = 6,
