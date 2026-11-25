@@ -1020,6 +1020,409 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         "[dump] --- GWorld value=0x%llx ---\n",
                         (unsigned long long)world);
 
+                /* --- Scan D: PlayerArray position scan --- */
+                fprintf(stderr,
+                        "[dump] --- PlayerArray pos scan "
+                        "(w+0x270 -> +0x138) ---\n");
+                {
+                    uint64_t gs_obj = 0;
+                    mem_read_ptr(&ctx.target, world + 0x270, &gs_obj);
+                    fprintf(stderr, "[dump] GS=0x%llx\n",
+                            (unsigned long long)gs_obj);
+                    if (gs_obj != 0) {
+                        uint64_t pa_data = 0;
+                        int32_t pa_num = 0;
+                        chain_read_tarray(&ctx, gs_obj + 0x138,
+                                          &pa_data, &pa_num);
+                        fprintf(stderr, "[dump] PA: data=0x%llx num=%d\n",
+                                (unsigned long long)pa_data, pa_num);
+                        int pi;
+                        int scan_lim = pa_num < 20 ? pa_num : 20;
+                        for (pi = 0; pi < scan_lim; ++pi) {
+                            uint64_t ps = 0;
+                            if (!mem_read_ptr(&ctx.target,
+                                              pa_data + (uint64_t)pi * 8,
+                                              &ps)) {
+                                continue;
+                            }
+                            if (ps == 0) continue;
+                            /* check if UObject */
+                            bool is_uobj = mem_looks_like_uobject(
+                                               &ctx.target, ps);
+                            if (!is_uobj) {
+                                /* might be encrypted handle */
+                                if (pi < 5) {
+                                    uint64_t raw = 0;
+                                    mem_read_u64(&ctx.target,
+                                                 pa_data + (uint64_t)pi * 8,
+                                                 &raw);
+                                    fprintf(stderr,
+                                            "[dump] PA[%d] handle "
+                                            "0x%llx\n",
+                                            pi,
+                                            (unsigned long long)raw);
+                                }
+                                continue;
+                            }
+                            /* bulk read 0x800 bytes */
+                            uint8_t ps_buf[0x800];
+                            if (!mem_read(&ctx.target, ps,
+                                          ps_buf, sizeof(ps_buf))) {
+                                continue;
+                            }
+                            int fhit = 0;
+                            int si;
+                            /* float triplets */
+                            for (si = 0; si + 12 <= 0x800
+                                 && fhit < 3; si += 4) {
+                                float fx, fy, fz;
+                                memcpy(&fx, ps_buf + si, 4);
+                                memcpy(&fy, ps_buf + si + 4, 4);
+                                memcpy(&fz, ps_buf + si + 8, 4);
+                                if (!isfinite(fx) || !isfinite(fy)
+                                    || !isfinite(fz)) {
+                                    continue;
+                                }
+                                int nz = (fx != 0.0f) + (fy != 0.0f)
+                                       + (fz != 0.0f);
+                                if (nz < 2) continue;
+                                double mag = sqrt((double)fx*fx
+                                                + (double)fy*fy
+                                                + (double)fz*fz);
+                                if (mag > 1000.0 && mag < 1e7) {
+                                    fprintf(stderr,
+                                            "[dump] PA[%d]+0x%03x flt "
+                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
+                                            pi, si, fx, fy, fz, mag);
+                                    fhit++;
+                                }
+                            }
+                            /* double triplets */
+                            for (si = 0; si + 24 <= 0x800
+                                 && fhit < 5; si += 8) {
+                                double dx, dy, dz;
+                                memcpy(&dx, ps_buf + si, 8);
+                                memcpy(&dy, ps_buf + si + 8, 8);
+                                memcpy(&dz, ps_buf + si + 16, 8);
+                                if (!isfinite(dx) || !isfinite(dy)
+                                    || !isfinite(dz)) {
+                                    continue;
+                                }
+                                int nz = (dx != 0.0) + (dy != 0.0)
+                                       + (dz != 0.0);
+                                if (nz < 2) continue;
+                                double mag = sqrt(dx*dx + dy*dy
+                                                + dz*dz);
+                                if (mag > 1000.0 && mag < 1e7) {
+                                    fprintf(stderr,
+                                            "[dump] PA[%d]+0x%03x dbl "
+                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
+                                            pi, si, dx, dy, dz, mag);
+                                    fhit++;
+                                }
+                            }
+                            if (fhit == 0 && pi < 5) {
+                                fprintf(stderr,
+                                        "[dump] PA[%d]=0x%llx "
+                                        "no-pos\n",
+                                        pi,
+                                        (unsigned long long)ps);
+                            }
+                        }
+                    }
+                }
+
+                /* --- Scan E: match actors position scan --- */
+                fprintf(stderr,
+                        "[dump] --- match actor pos scan "
+                        "(w+0x2f0 -> +0x140) ---\n");
+                {
+                    uint64_t ml_obj = 0;
+                    mem_read_ptr(&ctx.target, world + 0x2f0, &ml_obj);
+                    fprintf(stderr, "[dump] ML=0x%llx\n",
+                            (unsigned long long)ml_obj);
+                    if (ml_obj != 0) {
+                        uint64_t ma_data = 0;
+                        int32_t ma_num = 0;
+                        chain_read_tarray(&ctx, ml_obj + 0x140,
+                                          &ma_data, &ma_num);
+                        fprintf(stderr,
+                                "[dump] MA: data=0x%llx num=%d\n",
+                                (unsigned long long)ma_data, ma_num);
+                        int mi2;
+                        int ma_lim = ma_num < 30 ? ma_num : 30;
+                        for (mi2 = 0; mi2 < ma_lim; ++mi2) {
+                            uint64_t actor = 0;
+                            if (!mem_read_ptr(&ctx.target,
+                                              ma_data + (uint64_t)mi2 * 8,
+                                              &actor)) {
+                                continue;
+                            }
+                            if (actor == 0) continue;
+                            if (!mem_looks_like_uobject(&ctx.target,
+                                                        actor)) {
+                                continue;
+                            }
+                            /* bulk read actor 0x600 bytes */
+                            uint8_t ab[0x600];
+                            if (!mem_read(&ctx.target, actor,
+                                          ab, sizeof(ab))) {
+                                continue;
+                            }
+                            /* scan for float position directly
+                               in the actor (some actors store
+                               replicated position) */
+                            int ahit = 0;
+                            int ai2;
+                            for (ai2 = 0x80; ai2 + 12 <= 0x600
+                                 && ahit < 2; ai2 += 4) {
+                                float fx, fy, fz;
+                                memcpy(&fx, ab + ai2, 4);
+                                memcpy(&fy, ab + ai2 + 4, 4);
+                                memcpy(&fz, ab + ai2 + 8, 4);
+                                if (!isfinite(fx) || !isfinite(fy)
+                                    || !isfinite(fz)) {
+                                    continue;
+                                }
+                                int nz = (fx != 0.0f) + (fy != 0.0f)
+                                       + (fz != 0.0f);
+                                if (nz < 2) continue;
+                                double mag = sqrt((double)fx*fx
+                                                + (double)fy*fy
+                                                + (double)fz*fz);
+                                if (mag > 1000.0 && mag < 1e7) {
+                                    fprintf(stderr,
+                                            "[dump] MA[%d]+0x%03x flt "
+                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
+                                            mi2, ai2,
+                                            fx, fy, fz, mag);
+                                    ahit++;
+                                }
+                            }
+                            /* scan for double position */
+                            for (ai2 = 0x80; ai2 + 24 <= 0x600
+                                 && ahit < 4; ai2 += 8) {
+                                double dx, dy, dz;
+                                memcpy(&dx, ab + ai2, 8);
+                                memcpy(&dy, ab + ai2 + 8, 8);
+                                memcpy(&dz, ab + ai2 + 16, 8);
+                                if (!isfinite(dx) || !isfinite(dy)
+                                    || !isfinite(dz)) {
+                                    continue;
+                                }
+                                int nz = (dx != 0.0) + (dy != 0.0)
+                                       + (dz != 0.0);
+                                if (nz < 2) continue;
+                                double mag = sqrt(dx*dx + dy*dy
+                                                + dz*dz);
+                                if (mag > 1000.0 && mag < 1e7) {
+                                    fprintf(stderr,
+                                            "[dump] MA[%d]+0x%03x dbl "
+                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
+                                            mi2, ai2,
+                                            dx, dy, dz, mag);
+                                    ahit++;
+                                }
+                            }
+                            /* also check RootComponent chain */
+                            uint32_t roff;
+                            for (roff = 0x100; roff <= 0x500
+                                 && ahit < 6; roff += 8) {
+                                uint64_t rc = 0;
+                                memcpy(&rc, ab + roff, 8);
+                                if (rc == 0) continue;
+                                if (!mem_ptr_plausible(rc)) continue;
+                                if (!mem_looks_like_uobject(
+                                         &ctx.target, rc)) {
+                                    continue;
+                                }
+                                /* try doubles at multiple offsets */
+                                uint32_t poff;
+                                for (poff = 0x100; poff <= 0x300;
+                                     poff += 0x20) {
+                                    double rp[3] = {0};
+                                    if (!mem_read(&ctx.target,
+                                                  rc + poff,
+                                                  rp, 24)) {
+                                        continue;
+                                    }
+                                    double rmag = sqrt(
+                                        rp[0]*rp[0] + rp[1]*rp[1]
+                                        + rp[2]*rp[2]);
+                                    if (rmag > 1000.0 && rmag < 1e7
+                                        && isfinite(rp[0])
+                                        && isfinite(rp[1])
+                                        && isfinite(rp[2])
+                                        && ((rp[0] != 0.0)
+                                            + (rp[1] != 0.0)
+                                            + (rp[2] != 0.0)) >= 2) {
+                                        fprintf(stderr,
+                                            "[dump] MA[%d]+0x%03x"
+                                            "->RC+0x%03x dbl "
+                                            "(%.1f,%.1f,%.1f) "
+                                            "m=%.0f\n",
+                                            mi2, roff, poff,
+                                            rp[0], rp[1], rp[2],
+                                            rmag);
+                                        ahit++;
+                                        break;
+                                    }
+                                }
+                                /* try floats too */
+                                if (ahit == 0) {
+                                    for (poff = 0x100; poff <= 0x300;
+                                         poff += 0x10) {
+                                        float fp[3] = {0};
+                                        if (!mem_read(&ctx.target,
+                                                      rc + poff,
+                                                      fp, 12)) {
+                                            continue;
+                                        }
+                                        double fmag = sqrt(
+                                            (double)fp[0]*fp[0]
+                                            + (double)fp[1]*fp[1]
+                                            + (double)fp[2]*fp[2]);
+                                        if (fmag > 1000.0
+                                            && fmag < 1e7
+                                            && isfinite(fp[0])
+                                            && isfinite(fp[1])
+                                            && isfinite(fp[2])
+                                            && ((fp[0] != 0.0f)
+                                                + (fp[1] != 0.0f)
+                                                + (fp[2] != 0.0f))
+                                               >= 2) {
+                                            fprintf(stderr,
+                                                "[dump] MA[%d]"
+                                                "+0x%03x"
+                                                "->RC+0x%03x flt "
+                                                "(%.1f,%.1f,%.1f)"
+                                                " m=%.0f\n",
+                                                mi2, roff, poff,
+                                                fp[0], fp[1],
+                                                fp[2], fmag);
+                                            ahit++;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (ahit == 0 && mi2 < 5) {
+                                fprintf(stderr,
+                                        "[dump] MA[%d]=0x%llx "
+                                        "no-pos\n",
+                                        mi2,
+                                        (unsigned long long)actor);
+                            }
+                        }
+                    }
+                }
+
+                /* --- Scan F: PC ControlRotation scan --- */
+                fprintf(stderr,
+                        "[dump] --- PC ControlRotation ---\n");
+                {
+                    uint64_t pc = 0;
+                    uint64_t lp = 0;
+                    uint64_t lp_arr = 0;
+                    uint64_t gi_f = 0;
+                    mem_read_ptr(&ctx.target,
+                                 world + mutable_off.uworld_owning_game_instance,
+                                 &gi_f);
+                    if (gi_f != 0) {
+                        mem_read_ptr(&ctx.target,
+                                     gi_f + mutable_off.ugameinstance_local_players,
+                                     &lp_arr);
+                    }
+                    if (lp_arr != 0) {
+                        mem_read_ptr(&ctx.target, lp_arr, &lp);
+                    }
+                    if (lp != 0) {
+                        mem_read_ptr(&ctx.target,
+                                     lp + mutable_off.ulocalplayer_player_controller,
+                                     &pc);
+                    }
+                    fprintf(stderr, "[dump] PC=0x%llx\n",
+                            (unsigned long long)pc);
+                    if (pc != 0) {
+                        uint8_t pc_buf[0x600];
+                        if (mem_read(&ctx.target, pc,
+                                     pc_buf, sizeof(pc_buf))) {
+                            /* scan for FRotator (3 doubles)
+                               with plausible angle range
+                               -PI..PI or -180..180 */
+                            int ci;
+                            fprintf(stderr,
+                                    "[dump] PC angle scan "
+                                    "(doubles):\n");
+                            for (ci = 0; ci + 24 <= 0x600;
+                                 ci += 8) {
+                                double a[3];
+                                memcpy(a, pc_buf + ci, 24);
+                                if (!isfinite(a[0])
+                                    || !isfinite(a[1])
+                                    || !isfinite(a[2])) {
+                                    continue;
+                                }
+                                int nz = (a[0] != 0.0)
+                                       + (a[1] != 0.0)
+                                       + (a[2] != 0.0);
+                                if (nz < 1) continue;
+                                /* degrees: -360..360 */
+                                bool deg = true;
+                                int di;
+                                for (di = 0; di < 3; ++di) {
+                                    if (a[di] != 0.0
+                                        && (a[di] < -360.0
+                                            || a[di] > 360.0)) {
+                                        deg = false;
+                                    }
+                                }
+                                if (deg && nz >= 1) {
+                                    fprintf(stderr,
+                                            "[dump] PC+0x%03x "
+                                            "deg? (%.2f,%.2f,%.2f)\n",
+                                            ci, a[0], a[1], a[2]);
+                                }
+                            }
+                            /* also float angles */
+                            fprintf(stderr,
+                                    "[dump] PC angle scan "
+                                    "(floats):\n");
+                            for (ci = 0; ci + 12 <= 0x600;
+                                 ci += 4) {
+                                float a[3];
+                                memcpy(a, pc_buf + ci, 12);
+                                if (!isfinite(a[0])
+                                    || !isfinite(a[1])
+                                    || !isfinite(a[2])) {
+                                    continue;
+                                }
+                                int nz = (a[0] != 0.0f)
+                                       + (a[1] != 0.0f)
+                                       + (a[2] != 0.0f);
+                                if (nz < 2) continue;
+                                bool deg = true;
+                                int di;
+                                for (di = 0; di < 3; ++di) {
+                                    if (a[di] != 0.0f
+                                        && (a[di] < -360.0f
+                                            || a[di] > 360.0f)) {
+                                        deg = false;
+                                    }
+                                }
+                                if (deg) {
+                                    fprintf(stderr,
+                                            "[dump] PC+0x%03x "
+                                            "fdeg? "
+                                            "(%.2f,%.2f,%.2f)\n",
+                                            ci,
+                                            a[0], a[1], a[2]);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 fprintf(stderr, "[dump] --- fine ---\n");
                 world_dumped = true;
             }
