@@ -1002,3 +1002,247 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
 
     return false;
 }
+
+/* --- GUObjectArray resolver --- */
+
+#define GUOBJ_CHUNK_SIZE  65536
+#define GUOBJ_ITEM_SIZE   24
+
+bool chain_resolve_fobjectptr(const chain_ctx *ctx,
+                              uint64_t guobj_objects,
+                              uint64_t handle,
+                              uint64_t *out_ptr)
+{
+    uint32_t index;
+    uint32_t chunk_idx;
+    uint32_t within_chunk;
+    uint64_t chunk_ptr;
+    uint64_t item_addr;
+    uint64_t obj;
+
+    if (out_ptr == NULL) return false;
+    *out_ptr = 0;
+
+    if (handle == 0 || guobj_objects == 0) return false;
+
+    index = (uint32_t)(handle & 0xFFFFFFFF);
+    if (index == 0) return false;
+
+    chunk_idx = index / GUOBJ_CHUNK_SIZE;
+    within_chunk = index % GUOBJ_CHUNK_SIZE;
+
+    if (!mem_read_ptr(&ctx->target,
+                      guobj_objects + (uint64_t)chunk_idx * 8,
+                      &chunk_ptr)) {
+        return false;
+    }
+    if (chunk_ptr == 0 || !mem_ptr_plausible(chunk_ptr)) {
+        return false;
+    }
+
+    item_addr = chunk_ptr
+        + (uint64_t)within_chunk * GUOBJ_ITEM_SIZE;
+
+    if (!mem_read_ptr(&ctx->target, item_addr, &obj)) {
+        return false;
+    }
+    if (obj == 0 || !mem_ptr_plausible(obj)) {
+        return false;
+    }
+
+    *out_ptr = obj;
+    return true;
+}
+
+bool chain_find_guobjectarray(const chain_ctx *ctx,
+                              uint64_t gworld_rva,
+                              uint64_t *out_objects_addr)
+{
+    uint64_t base = ctx->target.module_base;
+    uint64_t gw_va = base + gworld_rva;
+    uint64_t scan_start;
+    uint64_t scan_end;
+    uint64_t addr;
+    uint64_t mod_end = ctx->target.module_end;
+
+    if (out_objects_addr == NULL) return false;
+    *out_objects_addr = 0;
+
+    scan_start = (gw_va > 0x200000) ? gw_va - 0x200000 : base;
+    scan_end = gw_va + 0x200000;
+    if (scan_start < base) scan_start = base;
+    if (scan_end > mod_end) scan_end = mod_end;
+
+    for (addr = scan_start; addr + 0x20 <= scan_end; addr += 8) {
+        uint8_t hdr[0x20];
+        uint64_t objects_ptr;
+        int32_t max_el, num_el, max_ch, num_ch;
+        uint64_t chunk0;
+        uint64_t item0_obj;
+
+        if (!mem_read(&ctx->target, addr, hdr, 0x20)) {
+            continue;
+        }
+
+        memcpy(&objects_ptr, hdr + 0x00, 8);
+        if (objects_ptr == 0 || !mem_ptr_plausible(objects_ptr)) {
+            continue;
+        }
+        if (objects_ptr >= base && objects_ptr < mod_end) {
+            continue;
+        }
+
+        memcpy(&max_el, hdr + 0x10, 4);
+        memcpy(&num_el, hdr + 0x14, 4);
+        memcpy(&max_ch, hdr + 0x18, 4);
+        memcpy(&num_ch, hdr + 0x1C, 4);
+
+        if (max_el <= 0 || max_el > 10000000) continue;
+        if (num_el < 1000 || num_el > max_el) continue;
+        if (max_ch <= 0 || max_ch > 1000) continue;
+        if (num_ch <= 0 || num_ch > max_ch) continue;
+
+        if ((int32_t)((uint32_t)num_ch * GUOBJ_CHUNK_SIZE)
+            < num_el - (int32_t)GUOBJ_CHUNK_SIZE) {
+            continue;
+        }
+
+        if (!mem_read_ptr(&ctx->target, objects_ptr, &chunk0)) {
+            continue;
+        }
+        if (chunk0 == 0 || !mem_ptr_plausible(chunk0)) {
+            continue;
+        }
+
+        if (!mem_read_ptr(&ctx->target, chunk0, &item0_obj)) {
+            continue;
+        }
+        if (item0_obj == 0 || !mem_ptr_plausible(item0_obj)) {
+            continue;
+        }
+        if (!mem_looks_like_uobject(&ctx->target, item0_obj)) {
+            continue;
+        }
+
+        {
+            uint64_t item5_obj = 0;
+            mem_read_ptr(&ctx->target,
+                         chunk0 + 5 * GUOBJ_ITEM_SIZE,
+                         &item5_obj);
+            if (item5_obj == 0
+                || !mem_looks_like_uobject(&ctx->target,
+                                           item5_obj)) {
+                continue;
+            }
+        }
+
+        *out_objects_addr = objects_ptr;
+        return true;
+    }
+
+    return false;
+}
+
+int chain_collect_via_guobj(const chain_ctx *ctx,
+                            uint64_t world,
+                            uint64_t guobj_objects,
+                            uint32_t rc_off,
+                            uint32_t loc_off,
+                            bool loc_float,
+                            uint64_t skip_actor,
+                            vec3 camera_position,
+                            double max_distance,
+                            chain_actor *out, int capacity)
+{
+    uint64_t gs = 0;
+    uint64_t pa_data = 0;
+    int32_t pa_num = 0;
+    int count = 0;
+    int i;
+
+    if (!mem_read_ptr(&ctx->target, world + 0x270, &gs)) {
+        return 0;
+    }
+    if (gs == 0 || !mem_ptr_plausible(gs)) return 0;
+    if (!chain_read_tarray(ctx, gs + 0x138, &pa_data, &pa_num)) {
+        return 0;
+    }
+    if (pa_num <= 0 || pa_num > 200) return 0;
+
+    for (i = 0; i < pa_num && count < capacity; i++) {
+        uint64_t ps = 0;
+        uint64_t pawn = 0;
+        uint64_t rc = 0;
+        uint32_t ps_off;
+        vec3 pos;
+
+        if (!mem_read_ptr(&ctx->target,
+                          pa_data + (uint64_t)i * 8, &ps)) {
+            continue;
+        }
+        if (ps == 0 || !mem_ptr_plausible(ps)) continue;
+
+        for (ps_off = 0x200; ps_off <= 0x400; ps_off += 8) {
+            uint64_t handle = 0;
+            uint32_t lo, hi;
+            mem_read_u64(&ctx->target, ps + ps_off, &handle);
+            if (handle == 0) continue;
+            lo = (uint32_t)(handle & 0xFFFFFFFF);
+            hi = (uint32_t)(handle >> 32);
+            if (lo != hi) continue;
+            if (lo == 0 || lo > 500000) continue;
+
+            if (!chain_resolve_fobjectptr(ctx, guobj_objects,
+                                          handle, &pawn)) {
+                continue;
+            }
+            if (pawn == skip_actor) continue;
+            if (!mem_looks_like_uobject(&ctx->target, pawn)) {
+                continue;
+            }
+
+            if (!mem_read_ptr(&ctx->target,
+                              pawn + rc_off, &rc)) {
+                continue;
+            }
+            if (rc == 0 || !mem_ptr_plausible(rc)) continue;
+
+            if (loc_float) {
+                float fxyz[3];
+                if (!mem_read(&ctx->target,
+                              rc + loc_off, fxyz, 12)) {
+                    continue;
+                }
+                pos = vec3_make((double)fxyz[0],
+                                (double)fxyz[1],
+                                (double)fxyz[2]);
+            } else {
+                double dxyz[3];
+                if (!mem_read(&ctx->target,
+                              rc + loc_off, dxyz, 24)) {
+                    continue;
+                }
+                pos = vec3_make(dxyz[0], dxyz[1], dxyz[2]);
+            }
+
+            if (!vec3_finite(pos)) continue;
+            if (!vec3_plausible(pos, OJBS_WORLD_LIMIT)) continue;
+            if (vec3_length(pos) < 100.0) continue;
+
+            {
+                double dist = vec3_length(
+                    vec3_sub(pos, camera_position));
+                if (max_distance > 0 && dist > max_distance) {
+                    continue;
+                }
+                out[count].actor = pawn;
+                out[count].position = pos;
+                out[count].distance = dist;
+                count++;
+            }
+            break;
+        }
+    }
+
+    return count;
+}

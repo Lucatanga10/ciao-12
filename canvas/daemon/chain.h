@@ -143,4 +143,24 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
                                  bool *out_is_float,
                                  vec3 *out_pos);
 
+bool chain_find_guobjectarray(const chain_ctx *ctx,
+                              uint64_t gworld_rva,
+                              uint64_t *out_objects_addr);
+
+bool chain_resolve_fobjectptr(const chain_ctx *ctx,
+                              uint64_t guobj_objects,
+                              uint64_t handle,
+                              uint64_t *out_ptr);
+
+int chain_collect_via_guobj(const chain_ctx *ctx,
+                            uint64_t world,
+                            uint64_t guobj_objects,
+                            uint32_t rc_off,
+                            uint32_t loc_off,
+                            bool loc_float,
+                            uint64_t skip_actor,
+                            vec3 camera_position,
+                            double max_distance,
+                            chain_actor *out, int capacity);
+
 #endif /* OJBS_CHAIN_H */
