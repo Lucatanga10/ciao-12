@@ -316,7 +316,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     int levels_cooldown = 0;
     int diag_tick = 0;
     int diag_count = 0;
-    const int diag_limit = 20;
+    const int diag_limit = 60;
+    uint64_t last_world = 0;
 
     memcpy(&mutable_off, off, sizeof(mutable_off));
     memset(&ctx, 0, sizeof(ctx));
@@ -398,6 +399,25 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         if (chain_ok) {
             diag_tick++;
 
+            /* GWorld change detection — re-dump on new world */
+            if (world != last_world) {
+                if (last_world != 0) {
+                    fprintf(stderr,
+                            "[watch] GWorld CAMBIATO: 0x%llx -> 0x%llx\n",
+                            (unsigned long long)last_world,
+                            (unsigned long long)world);
+                    /* Reset everything for new world */
+                    position_locked = false;
+                    levels_found = false;
+                    camera_scanned = false;
+                    levels_offset = 0;
+                    scan_cooldown = 0;
+                    levels_cooldown = 0;
+                }
+                last_world = world;
+                world_dumped = false;
+            }
+
             /* --- One-time world structure dump --- */
             if (!world_dumped) {
                 uint64_t persistent_level = 0;
@@ -462,34 +482,143 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                 mem_read_ptr(&ctx.target,
                              controller + mutable_off.apc_player_camera_manager,
                              &pcm);
+                /* --- Deep actor probe --- */
                 fprintf(stderr,
-                        "[dump] --- PCM=0x%llx non-zero doubles ---\n",
+                        "[dump] --- actor probe (first 10) ---\n");
+                if (persistent_level != 0) {
+                    uint64_t act_data = 0;
+                    int32_t act_num = 0;
+                    chain_read_tarray(&ctx, persistent_level + 0xe0,
+                                      &act_data, &act_num);
+                    fprintf(stderr, "[dump] level+0xe0 actors=%d\n",
+                            act_num);
+
+                    int ai;
+                    for (ai = 0; ai < act_num && ai < 10; ++ai) {
+                        uint64_t actor = 0;
+                        if (!mem_read_ptr(&ctx.target,
+                                          act_data + (uint64_t)ai * 8,
+                                          &actor)) {
+                            continue;
+                        }
+                        if (actor == 0) continue;
+
+                        /* scan actor for RootComponent-like ptrs */
+                        uint32_t aoff;
+                        int rc_hits = 0;
+                        fprintf(stderr,
+                                "[dump] actor[%d]=0x%llx", ai,
+                                (unsigned long long)actor);
+                        for (aoff = 0x100; aoff <= 0x300 && rc_hits < 3;
+                             aoff += 8) {
+                            uint64_t maybe_rc = 0;
+                            if (!mem_read_ptr(&ctx.target,
+                                              actor + aoff, &maybe_rc)) {
+                                continue;
+                            }
+                            if (maybe_rc == 0) continue;
+                            if (!mem_looks_like_uobject(&ctx.target,
+                                                        maybe_rc)) {
+                                continue;
+                            }
+                            /* check if RC has position-like data */
+                            double pos[3] = {0};
+                            mem_read(&ctx.target, maybe_rc + 0x140,
+                                     pos, sizeof(pos));
+                            double mag = sqrt(pos[0]*pos[0]
+                                            + pos[1]*pos[1]
+                                            + pos[2]*pos[2]);
+                            if (mag > 10.0 && mag < 1e8) {
+                                fprintf(stderr,
+                                        " RC+0x%x=0x%llx "
+                                        "pos(%.0f,%.0f,%.0f)",
+                                        aoff,
+                                        (unsigned long long)maybe_rc,
+                                        pos[0], pos[1], pos[2]);
+                                rc_hits++;
+                            }
+                            /* try float position too */
+                            float fpos[3] = {0};
+                            mem_read(&ctx.target, maybe_rc + 0x140,
+                                     fpos, sizeof(fpos));
+                            double fmag = sqrt((double)fpos[0]*fpos[0]
+                                             + (double)fpos[1]*fpos[1]
+                                             + (double)fpos[2]*fpos[2]);
+                            if (fmag > 10.0 && fmag < 1e8 && mag <= 10.0) {
+                                fprintf(stderr,
+                                        " RC+0x%x=0x%llx "
+                                        "fpos(%.0f,%.0f,%.0f)",
+                                        aoff,
+                                        (unsigned long long)maybe_rc,
+                                        fpos[0], fpos[1], fpos[2]);
+                                rc_hits++;
+                            }
+                        }
+                        fprintf(stderr, "%s\n",
+                                rc_hits == 0 ? " no-RC" : "");
+                    }
+                }
+
+                /* --- PCM data map (which regions have data) --- */
+                mem_read_ptr(&ctx.target,
+                             controller + mutable_off.apc_player_camera_manager,
+                             &pcm);
+                fprintf(stderr,
+                        "[dump] --- PCM=0x%llx data map ---\n",
                         (unsigned long long)pcm);
                 if (pcm != 0) {
-                    for (doff = 0x100; doff <= 0x2000; doff += 0x40) {
-                        double dvals[3];
-                        double dmag;
-                        vec3 dv;
+                    uint8_t chunk[0x100];
+                    for (doff = 0x0; doff <= 0x3000; doff += 0x100) {
+                        int nonzero = 0;
+                        int ci;
                         if (!mem_read(&ctx.target, pcm + doff,
-                                      dvals, sizeof(dvals))) {
+                                      chunk, sizeof(chunk))) {
                             continue;
                         }
-                        dv = vec3_make(dvals[0], dvals[1], dvals[2]);
-                        if (!vec3_finite(dv)) {
-                            continue;
+                        for (ci = 0; ci < 0x100; ++ci) {
+                            if (chunk[ci] != 0) nonzero++;
                         }
-                        if (dvals[0] == 0.0 && dvals[1] == 0.0
-                            && dvals[2] == 0.0) {
-                            continue;
+                        if (nonzero > 16) {
+                            fprintf(stderr,
+                                    "[dump] PCM+0x%04x..%04x: "
+                                    "%d/256 non-zero",
+                                    doff, doff + 0xFF, nonzero);
+                            /* check for position doubles */
+                            int di;
+                            for (di = 0; di + 24 <= 0x100; di += 8) {
+                                double d3[3];
+                                double dm;
+                                memcpy(d3, chunk + di, 24);
+                                if (d3[0] == 0.0 && d3[1] == 0.0
+                                    && d3[2] == 0.0) {
+                                    continue;
+                                }
+                                dm = sqrt(d3[0]*d3[0]
+                                        + d3[1]*d3[1]
+                                        + d3[2]*d3[2]);
+                                if (dm > 100.0 && dm < 1e8
+                                    && isfinite(d3[0])
+                                    && isfinite(d3[1])
+                                    && isfinite(d3[2])) {
+                                    fprintf(stderr,
+                                            " d+0x%x(%.0f,%.0f,%.0f)",
+                                            di, d3[0], d3[1], d3[2]);
+                                    break;
+                                }
+                            }
+                            /* check float FOV in chunk */
+                            for (di = 0; di + 4 <= 0x100; di += 4) {
+                                float fv;
+                                memcpy(&fv, chunk + di, 4);
+                                if (fv > 50.0f && fv < 140.0f) {
+                                    fprintf(stderr,
+                                            " f+0x%x=%.1f",
+                                            di, fv);
+                                    break;
+                                }
+                            }
+                            fprintf(stderr, "\n");
                         }
-                        dmag = vec3_length(dv);
-                        if (dmag < 1.0 || dmag > 1e15) {
-                            continue;
-                        }
-                        fprintf(stderr,
-                                "[dump] PCM+0x%04x: (%.1f, %.1f, %.1f) "
-                                "mag=%.0f\n",
-                                doff, dvals[0], dvals[1], dvals[2], dmag);
                     }
                 }
 
@@ -787,12 +916,25 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             /* --- Diagnostica periodica --- */
             if (diag_count < diag_limit &&
                 diag_tick % (options->fps * 3) == 1) {
+                /* read raw actor count from PersistentLevel */
+                int32_t raw_actors = 0;
+                {
+                    uint64_t pl = 0;
+                    mem_read_ptr(&ctx.target,
+                                 world + mutable_off.uworld_persistent_level,
+                                 &pl);
+                    if (pl != 0) {
+                        mem_read_i32(&ctx.target, pl + 0xe0 + 8,
+                                     &raw_actors);
+                    }
+                }
                 fprintf(stderr,
-                        "[diag] cam=(%.0f,%.0f,%.0f) fov=%.1f "
-                        "actors=%d boxes=%d levels=%s pos=%s\n",
+                        "[diag] w=0x%llx cam=(%.0f,%.0f,%.0f) fov=%.1f "
+                        "raw=%d act=%d box=%d lv=%s pos=%s\n",
+                        (unsigned long long)world,
                         camera.position.x, camera.position.y,
                         camera.position.z, camera.fov,
-                        actor_count, box_count,
+                        raw_actors, actor_count, box_count,
                         levels_found ? "si" : "no",
                         position_locked ? "si" : "scan");
                 diag_count++;
