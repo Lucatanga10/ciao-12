@@ -370,7 +370,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
 
     {
         int diag_count = 0;
-        const int diag_limit = 3;
+        const int diag_limit = 10;
+        int diag_tick = 0;
 
     while (!g_stop) {
         const long started = now_ns();
@@ -428,19 +429,23 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     lp_count, (unsigned long long)lp, (unsigned long long)pc);
                 diag_count++;
             }
-        } else if (diag_count < diag_limit) {
-            uint64_t raw_ptr = 0;
-            uint64_t gw_addr = ctx.target.module_base + mutable_off.gworld_rva;
-            mem_read(&ctx.target, gw_addr, &raw_ptr, 8);
-            fprintf(stderr,
-                "[diag] GWorld FAIL: addr=0x%llx raw=0x%llx\n",
-                (unsigned long long)gw_addr, (unsigned long long)raw_ptr);
-            diag_count++;
+        } else {
+            diag_tick++;
+            if (diag_count < diag_limit && diag_tick % (options->fps * 2) == 1) {
+                uint64_t raw_ptr = 0;
+                uint64_t gw_addr = ctx.target.module_base + mutable_off.gworld_rva;
+                mem_read(&ctx.target, gw_addr, &raw_ptr, 8);
+                fprintf(stderr,
+                    "[diag] CHAIN FAIL: addr=0x%llx raw=0x%llx\n",
+                    (unsigned long long)gw_addr, (unsigned long long)raw_ptr);
+                diag_count++;
+            }
         }
 
         if (chain_ok) {
 
-            if (diag_count < diag_limit) {
+            diag_tick++;
+            if (diag_count < diag_limit && diag_tick % (options->fps * 2) == 1) {
                 uint64_t level = 0;
                 uint64_t actors_data = 0;
                 int32_t actors_n = 0;
