@@ -1670,6 +1670,196 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                 }
 
+                /* --- Scan H: Differential position hunt --- */
+                if (match_actors_avail && match_tarray_obj != 0) {
+                    fprintf(stderr,
+                        "[dump] --- Diff scan (1.5s gap) ---\n");
+                    #define DS_N 5
+                    #define DS_SZ 0x1000
+                    #define DS_RSZ 0xC00
+                    static uint8_t ds_a1[DS_N][DS_SZ];
+                    static uint8_t ds_a2[DS_N][DS_SZ];
+                    static uint8_t ds_r1[DS_N][DS_RSZ];
+                    static uint8_t ds_r2[DS_N][DS_RSZ];
+                    uint64_t ds_act[DS_N];
+                    uint64_t ds_rc[DS_N];
+                    int ds_cnt = 0;
+
+                    uint64_t ds_data = 0;
+                    int32_t ds_num = 0;
+                    chain_read_tarray(&ctx,
+                        match_tarray_obj + 0x140,
+                        &ds_data, &ds_num);
+
+                    int ds_idx[] = {20, 40, 60, 80, 100};
+                    int ds_i;
+                    for (ds_i = 0; ds_i < 5; ds_i++) {
+                        uint64_t a = 0;
+                        uint64_t r = 0;
+                        if (ds_idx[ds_i] >= ds_num) continue;
+                        mem_read_ptr(&ctx.target,
+                            ds_data + (uint64_t)ds_idx[ds_i] * 8,
+                            &a);
+                        if (a == 0 || !mem_ptr_plausible(a))
+                            continue;
+                        mem_read_ptr(&ctx.target,
+                            a + 0x100, &r);
+                        ds_act[ds_cnt] = a;
+                        ds_rc[ds_cnt] = (r != 0
+                            && mem_ptr_plausible(r)) ? r : 0;
+                        memset(ds_a1[ds_cnt], 0, DS_SZ);
+                        mem_read(&ctx.target, a,
+                            ds_a1[ds_cnt], DS_SZ);
+                        if (ds_rc[ds_cnt]) {
+                            memset(ds_r1[ds_cnt], 0, DS_RSZ);
+                            mem_read(&ctx.target, r,
+                                ds_r1[ds_cnt], DS_RSZ);
+                        }
+                        fprintf(stderr,
+                            "[dump] DS[%d] a=0x%llx rc=%s\n",
+                            ds_idx[ds_i],
+                            (unsigned long long)a,
+                            ds_rc[ds_cnt] ? "yes" : "no");
+                        ds_cnt++;
+                    }
+
+                    fprintf(stderr,
+                        "[dump] snap1 %d actors, sleep 1.5s\n",
+                        ds_cnt);
+                    sleep_ns(1500000000L);
+
+                    {
+                        int di;
+                        for (di = 0; di < ds_cnt; di++) {
+                            memset(ds_a2[di], 0, DS_SZ);
+                            mem_read(&ctx.target,
+                                ds_act[di], ds_a2[di], DS_SZ);
+                            if (ds_rc[di]) {
+                                memset(ds_r2[di], 0, DS_RSZ);
+                                mem_read(&ctx.target,
+                                    ds_rc[di], ds_r2[di],
+                                    DS_RSZ);
+                            }
+                        }
+
+                        for (di = 0; di < ds_cnt; di++) {
+                            int hits = 0;
+                            uint32_t doff;
+                            fprintf(stderr,
+                                "[dump] DS act 0x%llx:\n",
+                                (unsigned long long)ds_act[di]);
+
+                            for (doff = 0;
+                                 doff + 8 <= DS_SZ && hits < 20;
+                                 doff += 8) {
+                                double v1, v2;
+                                memcpy(&v1,
+                                    ds_a1[di] + doff, 8);
+                                memcpy(&v2,
+                                    ds_a2[di] + doff, 8);
+                                if (v1 == v2) continue;
+                                if (!isfinite(v1)
+                                    || !isfinite(v2)) continue;
+                                double av = fabs(v2);
+                                if (av > 500.0 && av < 2e7) {
+                                    fprintf(stderr,
+                                        "[dump]  +0x%03x d:"
+                                        " %.1f->%.1f\n",
+                                        doff, v1, v2);
+                                    hits++;
+                                }
+                            }
+
+                            for (doff = 0;
+                                 doff + 4 <= DS_SZ && hits < 30;
+                                 doff += 4) {
+                                float f1, f2;
+                                memcpy(&f1,
+                                    ds_a1[di] + doff, 4);
+                                memcpy(&f2,
+                                    ds_a2[di] + doff, 4);
+                                if (f1 == f2) continue;
+                                if (!isfinite(f1)
+                                    || !isfinite(f2)) continue;
+                                double af = fabs((double)f2);
+                                if (af > 500.0 && af < 2e7) {
+                                    fprintf(stderr,
+                                        "[dump]  +0x%03x f:"
+                                        " %.1f->%.1f\n",
+                                        doff, f1, f2);
+                                    hits++;
+                                }
+                            }
+
+                            if (hits == 0) {
+                                fprintf(stderr,
+                                    "[dump]  act: no changes\n");
+                            }
+
+                            if (ds_rc[di]) {
+                                int rh = 0;
+                                fprintf(stderr,
+                                    "[dump] DS rc 0x%llx:\n",
+                                    (unsigned long long)
+                                    ds_rc[di]);
+                                for (doff = 0;
+                                     doff + 8 <= DS_RSZ
+                                     && rh < 20;
+                                     doff += 8) {
+                                    double v1, v2;
+                                    memcpy(&v1,
+                                        ds_r1[di] + doff, 8);
+                                    memcpy(&v2,
+                                        ds_r2[di] + doff, 8);
+                                    if (v1 == v2) continue;
+                                    if (!isfinite(v1)
+                                        || !isfinite(v2))
+                                        continue;
+                                    double av = fabs(v2);
+                                    if (av > 50.0 && av < 2e7) {
+                                        fprintf(stderr,
+                                            "[dump]  RC+"
+                                            "0x%03x d:"
+                                            " %.1f->%.1f\n",
+                                            doff, v1, v2);
+                                        rh++;
+                                    }
+                                }
+                                for (doff = 0;
+                                     doff + 4 <= DS_RSZ
+                                     && rh < 30;
+                                     doff += 4) {
+                                    float f1, f2;
+                                    memcpy(&f1,
+                                        ds_r1[di] + doff, 4);
+                                    memcpy(&f2,
+                                        ds_r2[di] + doff, 4);
+                                    if (f1 == f2) continue;
+                                    if (!isfinite(f1)
+                                        || !isfinite(f2))
+                                        continue;
+                                    double af =
+                                        fabs((double)f2);
+                                    if (af > 50.0
+                                        && af < 2e7) {
+                                        fprintf(stderr,
+                                            "[dump]  RC+"
+                                            "0x%03x f:"
+                                            " %.1f->%.1f\n",
+                                            doff, f1, f2);
+                                        rh++;
+                                    }
+                                }
+                                if (rh == 0) {
+                                    fprintf(stderr,
+                                        "[dump]  rc:"
+                                        " no changes\n");
+                                }
+                            }
+                        }
+                    }
+                }
+
                 fprintf(stderr, "[dump] --- fine ---\n");
                 world_dumped = true;
             }

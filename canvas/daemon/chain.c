@@ -933,8 +933,7 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
     uint8_t buf[FT_SCAN_MAX];
     uint32_t to_read;
     uint32_t off;
-    static const uint64_t ONE_D = 0x3FF0000000000000ULL;
-    static const uint32_t ONE_F = 0x3F800000u;
+    (void)0;
 
     if (ctx == NULL || rc_addr == 0 || out_translation_off == NULL) {
         return false;
@@ -945,16 +944,20 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
         return false;
     }
 
-    for (off = 0x38; off + 0x18 <= to_read; off += 8) {
-        uint64_t s0, s1, s2;
-        memcpy(&s0, buf + off, 8);
-        memcpy(&s1, buf + off + 8, 8);
-        memcpy(&s2, buf + off + 16, 8);
-
-        if (s0 == ONE_D && s1 == ONE_D && s2 == ONE_D) {
-            uint32_t t_off = off - 0x18;
+    for (off = 0x20; off + 0x18 <= to_read; off += 8) {
+        double sd[3];
+        memcpy(sd, buf + off, 24);
+        if (!isfinite(sd[0]) || !isfinite(sd[1]) || !isfinite(sd[2])) {
+            continue;
+        }
+        if (fabs(sd[0] - 1.0) < 0.01
+            && fabs(sd[1] - 1.0) < 0.01
+            && fabs(sd[2] - 1.0) < 0.01) {
+            uint32_t t_off;
             double xyz[3];
             vec3 pos;
+            if (off < 0x18) continue;
+            t_off = off - 0x18;
             memcpy(xyz, buf + t_off, 24);
             if (!isfinite(xyz[0]) || !isfinite(xyz[1]) || !isfinite(xyz[2])) {
                 continue;
@@ -969,13 +972,15 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
         }
     }
 
-    for (off = 0x1C; off + 0x0C <= to_read; off += 4) {
-        uint32_t s0, s1, s2;
-        memcpy(&s0, buf + off, 4);
-        memcpy(&s1, buf + off + 4, 4);
-        memcpy(&s2, buf + off + 8, 4);
-
-        if (s0 == ONE_F && s1 == ONE_F && s2 == ONE_F) {
+    for (off = 0x10; off + 0x0C <= to_read; off += 4) {
+        float sf[3];
+        memcpy(sf, buf + off, 12);
+        if (!isfinite(sf[0]) || !isfinite(sf[1]) || !isfinite(sf[2])) {
+            continue;
+        }
+        if (fabsf(sf[0] - 1.0f) < 0.01f
+            && fabsf(sf[1] - 1.0f) < 0.01f
+            && fabsf(sf[2] - 1.0f) < 0.01f) {
             uint32_t t_off;
             float fxyz[3];
             vec3 pos;
