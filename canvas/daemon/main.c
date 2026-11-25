@@ -2227,6 +2227,15 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     actors, OJBS_MAX_ACTORS);
             }
 
+            /* last-resort camera: use first actor position */
+            if (actor_count > 0 &&
+                camera.position.x == 0.0 &&
+                camera.position.y == 0.0 &&
+                camera.position.z == 0.0) {
+                camera.position = actors[0].position;
+                camera.position.z += 500.0;
+            }
+
             /* --- Disegno ESP --- */
             box_count = build_live_boxes(&ctx, &camera, actors, actor_count,
                                          link.screen_width, link.screen_height,
@@ -2262,6 +2271,21 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         actor_count, box_count,
                         guobj_found ? "si" : "no",
                         pawn_pos_locked ? "si" : "no");
+                if (actor_count > 0 && diag_count < 3) {
+                    int ai;
+                    int show = actor_count < 5 ? actor_count : 5;
+                    for (ai = 0; ai < show; ai++) {
+                        fprintf(stderr,
+                            "[diag] actor[%d] "
+                            "pos=(%.0f,%.0f,%.0f) "
+                            "dist=%.0f\n",
+                            ai,
+                            actors[ai].position.x,
+                            actors[ai].position.y,
+                            actors[ai].position.z,
+                            actors[ai].distance);
+                    }
+                }
                 diag_count++;
             }
         } else {
