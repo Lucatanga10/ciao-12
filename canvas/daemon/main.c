@@ -319,6 +319,12 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     const int diag_limit = 60;
     uint64_t last_world = 0;
 
+    uint64_t match_tarray_obj = 0;
+    bool match_actors_avail = false;
+    bool ftransform_locked = false;
+    uint32_t ftransform_trans_off = 0;
+    bool ftransform_is_float = false;
+
     memcpy(&mutable_off, off, sizeof(mutable_off));
     memset(&ctx, 0, sizeof(ctx));
     ctx.off = &mutable_off;
@@ -400,6 +406,58 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             chain_ok = true;
         }
 
+        /* camera fallback: PCM zeros → read PC RootComponent */
+        if (chain_ok && ftransform_locked &&
+            camera.position.x == 0.0 &&
+            camera.position.y == 0.0 &&
+            camera.position.z == 0.0) {
+            uint64_t pc_rc = 0;
+            mem_read_ptr(&ctx.target, controller + 0x100, &pc_rc);
+            if (pc_rc != 0 && mem_ptr_plausible(pc_rc)) {
+                if (ftransform_is_float) {
+                    float fxyz[3];
+                    if (mem_read(&ctx.target,
+                                 pc_rc + ftransform_trans_off,
+                                 fxyz, sizeof(fxyz))) {
+                        vec3 p = vec3_make((double)fxyz[0],
+                                           (double)fxyz[1],
+                                           (double)fxyz[2]);
+                        if (vec3_plausible(p, 2e7) &&
+                            vec3_length(p) > 100.0) {
+                            camera.position = p;
+                        }
+                    }
+                } else {
+                    double xyz[3];
+                    if (mem_read(&ctx.target,
+                                 pc_rc + ftransform_trans_off,
+                                 xyz, sizeof(xyz))) {
+                        vec3 p = vec3_make(xyz[0], xyz[1], xyz[2]);
+                        if (vec3_plausible(p, 2e7) &&
+                            vec3_length(p) > 100.0) {
+                            camera.position = p;
+                        }
+                    }
+                }
+            }
+            /* try PC+0x488 as yaw (float, possibly radians) */
+            {
+                float yaw_f = 0;
+                if (mem_read_f32(&ctx.target,
+                                 controller + 0x488, &yaw_f)) {
+                    if (isfinite(yaw_f) && yaw_f != 0.0f) {
+                        if (yaw_f > -6.3f && yaw_f < 6.3f) {
+                            camera.rotation.yaw = (double)yaw_f
+                                * (180.0 / 3.14159265358979);
+                        } else if (yaw_f > -360.0f
+                                   && yaw_f < 360.0f) {
+                            camera.rotation.yaw = (double)yaw_f;
+                        }
+                    }
+                }
+            }
+        }
+
         if (chain_ok) {
             diag_tick++;
 
@@ -417,6 +475,10 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     levels_offset = 0;
                     scan_cooldown = 0;
                     levels_cooldown = 0;
+                    match_tarray_obj = 0;
+                    match_actors_avail = false;
+                    ftransform_locked = false;
+                    ftransform_trans_off = 0;
                 }
                 last_world = world;
                 world_dumped = false;
@@ -1485,6 +1547,129 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                 }
 
+                /* --- Scan G: FTransform hunt via Scale3D --- */
+                fprintf(stderr,
+                        "[dump] --- FTransform hunt (Scale3D) ---\n");
+                {
+                    uint64_t ml_obj = 0;
+                    mem_read_ptr(&ctx.target, world + 0x2f0, &ml_obj);
+                    if (ml_obj != 0) {
+                        uint64_t ma_data = 0;
+                        int32_t ma_num = 0;
+                        chain_read_tarray(&ctx, ml_obj + 0x140,
+                                          &ma_data, &ma_num);
+                        fprintf(stderr,
+                                "[dump] ML=0x%llx MA=%d\n",
+                                (unsigned long long)ml_obj, ma_num);
+                        if (ma_num > 10) {
+                            match_tarray_obj = ml_obj;
+                            match_actors_avail = true;
+
+                            int ft_hits = 0;
+                            uint32_t ft_consensus = 0;
+                            int ft_agree = 0;
+                            bool ft_float = false;
+                            int ft_step = ma_num > 40
+                                        ? (ma_num / 20) : 2;
+                            int mi;
+                            for (mi = 5;
+                                 mi < ma_num && ft_hits < 20;
+                                 mi += ft_step) {
+                                uint64_t actor = 0;
+                                uint64_t rc = 0;
+                                uint32_t t_off = 0;
+                                bool t_float = false;
+                                vec3 t_pos;
+                                if (!mem_read_ptr(&ctx.target,
+                                        ma_data + (uint64_t)mi * 8,
+                                        &actor)) {
+                                    continue;
+                                }
+                                if (actor == 0) continue;
+                                if (!mem_ptr_plausible(actor)) continue;
+                                if (!mem_read_ptr(&ctx.target,
+                                        actor + 0x100, &rc)) {
+                                    continue;
+                                }
+                                if (rc == 0
+                                    || !mem_ptr_plausible(rc)) {
+                                    continue;
+                                }
+                                if (!chain_find_ftransform_in_rc(
+                                        &ctx, rc, 0xC00,
+                                        &t_off, &t_float, &t_pos)) {
+                                    continue;
+                                }
+                                fprintf(stderr,
+                                    "[dump] MA[%d] FT@RC+0x%03x "
+                                    "%s (%.0f,%.0f,%.0f)\n",
+                                    mi, t_off,
+                                    t_float ? "float" : "double",
+                                    t_pos.x, t_pos.y, t_pos.z);
+                                ft_hits++;
+                                if (ft_consensus == 0) {
+                                    ft_consensus = t_off;
+                                    ft_float = t_float;
+                                    ft_agree = 1;
+                                } else if (t_off == ft_consensus) {
+                                    ft_agree++;
+                                }
+                            }
+                            fprintf(stderr,
+                                "[dump] FT: hits=%d off=0x%x "
+                                "agree=%d %s\n",
+                                ft_hits, ft_consensus, ft_agree,
+                                ft_float ? "float" : "double");
+                            if (ft_agree >= 3) {
+                                ftransform_trans_off = ft_consensus;
+                                ftransform_is_float = ft_float;
+                                ftransform_locked = true;
+                                mutable_off.aactor_root_component
+                                    = 0x100;
+                                mutable_off.has_aactor_root_component
+                                    = true;
+                                mutable_off.uscene_relative_location
+                                    = ft_consensus;
+                                mutable_off.has_uscene_relative_location
+                                    = true;
+                                mutable_off.uscene_location_is_float
+                                    = ft_float;
+                                position_locked = true;
+                                fprintf(stderr,
+                                    "[dump] LOCKED rc=+0x100 "
+                                    "loc=RC+0x%x %s\n",
+                                    ft_consensus,
+                                    ft_float ? "float" : "double");
+                            }
+                        }
+                    } else {
+                        fprintf(stderr,
+                                "[dump] w+0x2f0 null, no match actors\n");
+                    }
+
+                    /* try PC RC for camera position */
+                    {
+                        uint64_t pc_rc = 0;
+                        uint32_t pc_t = 0;
+                        bool pc_fl = false;
+                        vec3 pc_pos;
+                        mem_read_ptr(&ctx.target,
+                                     controller + 0x100, &pc_rc);
+                        if (pc_rc != 0 && mem_ptr_plausible(pc_rc)
+                            && chain_find_ftransform_in_rc(
+                                   &ctx, pc_rc, 0xC00,
+                                   &pc_t, &pc_fl, &pc_pos)) {
+                            fprintf(stderr,
+                                "[dump] PC-cam: RC+0x%03x "
+                                "(%.0f,%.0f,%.0f)\n",
+                                pc_t, pc_pos.x, pc_pos.y, pc_pos.z);
+                        } else {
+                            fprintf(stderr,
+                                "[dump] PC RC: no FTransform\n");
+                        }
+                    }
+                }
+
                 fprintf(stderr, "[dump] --- fine ---\n");
                 world_dumped = true;
             }
@@ -1626,7 +1811,13 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             }
 
             /* --- Raccolta attori --- */
-            if (levels_found) {
+            if (match_actors_avail && ftransform_locked) {
+                actor_count = chain_collect_actors_from_tarray(
+                    &ctx, match_tarray_obj + 0x140,
+                    self_pawn, camera.position,
+                    options->max_meters * 100.0,
+                    actors, OJBS_MAX_ACTORS);
+            } else if (levels_found) {
                 actor_count = chain_collect_actors_all_levels(
                     &ctx, world, levels_offset,
                     self_pawn, camera.position,
@@ -1663,15 +1854,18 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                  &pawn_raw);
                 }
                 fprintf(stderr,
-                        "[diag] w=0x%llx pawn=0x%llx cam=(%.0f,%.0f,%.0f) "
-                        "fov=%.1f raw=%d act=%d box=%d lv=%s pos=%s\n",
+                        "[diag] w=0x%llx pawn=0x%llx "
+                        "cam=(%.0f,%.0f,%.0f) yaw=%.1f "
+                        "fov=%.1f act=%d box=%d "
+                        "ft=%s ma=%s\n",
                         (unsigned long long)world,
                         (unsigned long long)pawn_raw,
                         camera.position.x, camera.position.y,
-                        camera.position.z, camera.fov,
-                        raw_actors, actor_count, box_count,
-                        levels_found ? "si" : "no",
-                        position_locked ? "si" : "scan");
+                        camera.position.z, camera.rotation.yaw,
+                        camera.fov,
+                        actor_count, box_count,
+                        ftransform_locked ? "si" : "no",
+                        match_actors_avail ? "si" : "no");
                 diag_count++;
             }
         } else {

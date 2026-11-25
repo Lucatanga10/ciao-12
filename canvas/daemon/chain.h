@@ -120,4 +120,27 @@ int chain_collect_actors_all_levels(const chain_ctx *ctx, uint64_t world,
 bool chain_scan_camera_offset(const chain_ctx *ctx, uint64_t pcm,
                               uint32_t *out_cache_offset);
 
+/*
+ * Raccoglie attori da un TArray arbitrario (non da un ULevel).
+ * tarray_addr punta al primo campo del TArray (data, num, max).
+ */
+int chain_collect_actors_from_tarray(const chain_ctx *ctx,
+                                     uint64_t tarray_addr,
+                                     uint64_t skip_actor,
+                                     vec3 camera_position,
+                                     double max_distance,
+                                     chain_actor *out, int capacity);
+
+/*
+ * Cerca FTransform in un RootComponent scandendo per Scale3D = (1.0, 1.0, 1.0).
+ * scan_limit byte letti dal componente; massimo 0xC00.
+ * Torna true e scrive l'offset della Translation dentro il RC, piu' la posizione
+ * letta come validazione. is_float true se il match era su float, non double.
+ */
+bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
+                                 uint32_t scan_limit,
+                                 uint32_t *out_translation_off,
+                                 bool *out_is_float,
+                                 vec3 *out_pos);
+
 #endif /* OJBS_CHAIN_H */

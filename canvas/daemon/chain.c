@@ -845,3 +845,155 @@ bool chain_scan_camera_offset(const chain_ctx *ctx, uint64_t pcm,
 
     return false;
 }
+
+/* ------------------------------------------------------------------ */
+/* Raccolta attori da TArray arbitrario + scan FTransform              */
+/* ------------------------------------------------------------------ */
+
+int chain_collect_actors_from_tarray(const chain_ctx *ctx,
+                                     uint64_t tarray_addr,
+                                     uint64_t skip_actor,
+                                     vec3 camera_position,
+                                     double max_distance,
+                                     chain_actor *out, int capacity)
+{
+    uint64_t actors_data = 0;
+    int32_t actors_count = 0;
+    uint64_t pointers[OJBS_MAX_ACTORS];
+    int to_read;
+    int found = 0;
+    int i;
+
+    if (ctx == NULL || ctx->off == NULL || out == NULL || capacity <= 0) {
+        return 0;
+    }
+
+    if (!chain_read_tarray(ctx, tarray_addr, &actors_data, &actors_count)) {
+        return 0;
+    }
+    if (actors_count <= 0) {
+        return 0;
+    }
+
+    to_read = actors_count;
+    if (to_read > OJBS_MAX_ACTORS) {
+        to_read = OJBS_MAX_ACTORS;
+    }
+    if (to_read > capacity) {
+        to_read = capacity;
+    }
+
+    memset(pointers, 0, sizeof(pointers));
+
+    if (!mem_read(&ctx->target, actors_data, pointers,
+                  (size_t)to_read * sizeof(uint64_t))) {
+        return 0;
+    }
+
+    for (i = 0; i < to_read && found < capacity; ++i) {
+        uint64_t actor = pointers[i];
+        vec3 position;
+        vec3 delta;
+        double distance;
+
+        if (actor == 0 || actor == skip_actor) {
+            continue;
+        }
+        if (!mem_ptr_plausible(actor)) {
+            continue;
+        }
+        if (!chain_actor_position(ctx, actor, &position)) {
+            continue;
+        }
+
+        delta = vec3_sub(position, camera_position);
+        distance = vec3_length(delta);
+
+        if (distance > max_distance) {
+            continue;
+        }
+
+        out[found].actor = actor;
+        out[found].position = position;
+        out[found].distance = distance;
+        found += 1;
+    }
+
+    return found;
+}
+
+#define FT_SCAN_MAX 0xC00u
+
+bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
+                                 uint32_t scan_limit,
+                                 uint32_t *out_translation_off,
+                                 bool *out_is_float,
+                                 vec3 *out_pos)
+{
+    uint8_t buf[FT_SCAN_MAX];
+    uint32_t to_read;
+    uint32_t off;
+    static const uint64_t ONE_D = 0x3FF0000000000000ULL;
+    static const uint32_t ONE_F = 0x3F800000u;
+
+    if (ctx == NULL || rc_addr == 0 || out_translation_off == NULL) {
+        return false;
+    }
+
+    to_read = (scan_limit > FT_SCAN_MAX) ? FT_SCAN_MAX : scan_limit;
+    if (!mem_read(&ctx->target, rc_addr, buf, to_read)) {
+        return false;
+    }
+
+    for (off = 0x38; off + 0x18 <= to_read; off += 8) {
+        uint64_t s0, s1, s2;
+        memcpy(&s0, buf + off, 8);
+        memcpy(&s1, buf + off + 8, 8);
+        memcpy(&s2, buf + off + 16, 8);
+
+        if (s0 == ONE_D && s1 == ONE_D && s2 == ONE_D) {
+            uint32_t t_off = off - 0x18;
+            double xyz[3];
+            vec3 pos;
+            memcpy(xyz, buf + t_off, 24);
+            if (!isfinite(xyz[0]) || !isfinite(xyz[1]) || !isfinite(xyz[2])) {
+                continue;
+            }
+            pos = vec3_make(xyz[0], xyz[1], xyz[2]);
+            if (vec3_length(pos) > 100.0 && vec3_plausible(pos, 2e7)) {
+                *out_translation_off = t_off;
+                *out_is_float = false;
+                if (out_pos) *out_pos = pos;
+                return true;
+            }
+        }
+    }
+
+    for (off = 0x1C; off + 0x0C <= to_read; off += 4) {
+        uint32_t s0, s1, s2;
+        memcpy(&s0, buf + off, 4);
+        memcpy(&s1, buf + off + 4, 4);
+        memcpy(&s2, buf + off + 8, 4);
+
+        if (s0 == ONE_F && s1 == ONE_F && s2 == ONE_F) {
+            uint32_t t_off;
+            float fxyz[3];
+            vec3 pos;
+            if (off < 0x0C) continue;
+            t_off = off - 0x0C;
+            memcpy(fxyz, buf + t_off, 12);
+            if (!isfinite(fxyz[0]) || !isfinite(fxyz[1]) || !isfinite(fxyz[2])) {
+                continue;
+            }
+            pos = vec3_make((double)fxyz[0], (double)fxyz[1], (double)fxyz[2]);
+            if (vec3_length(pos) > 100.0 && vec3_plausible(pos, 2e7)) {
+                *out_translation_off = t_off;
+                *out_is_float = true;
+                if (out_pos) *out_pos = pos;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
