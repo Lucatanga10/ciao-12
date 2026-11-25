@@ -502,37 +502,36 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                             pawn_raw == 0 ? "LOBBY" : "IN-MATCH");
                 }
 
-                /* --- GameState scan: world ptrs → PlayerArray --- */
+                /* --- UWorld UObject map (all ptrs) --- */
                 fprintf(stderr,
-                        "[dump] --- GameState scan ---\n");
-                for (doff = 0x0; doff <= 0x200; doff += 8) {
-                    uint64_t gs_cand = 0;
-                    if (!mem_read_ptr(&ctx.target, world + doff,
-                                      &gs_cand)) {
+                        "[dump] --- UWorld UObject ptrs ---\n");
+                for (doff = 0x0; doff <= 0x500; doff += 8) {
+                    uint64_t wo = 0;
+                    if (!mem_read_ptr(&ctx.target, world + doff, &wo)) {
                         continue;
                     }
-                    if (gs_cand == 0 || gs_cand == persistent_level) {
-                        continue;
-                    }
-                    if (!mem_looks_like_uobject(&ctx.target, gs_cand)) {
-                        continue;
-                    }
-                    /* scan candidate for TArray of UObjects */
+                    if (wo == 0) continue;
+                    if (!mem_looks_like_uobject(&ctx.target, wo)) continue;
+                    fprintf(stderr, "[dump] w+0x%03x=0x%llx",
+                            doff, (unsigned long long)wo);
+                    /* quick check for TArray of UObjects inside */
                     uint32_t gs_off;
-                    for (gs_off = 0x28; gs_off <= 0x400; gs_off += 8) {
+                    int found_ta = 0;
+                    for (gs_off = 0x28; gs_off <= 0x600 && found_ta < 3;
+                         gs_off += 8) {
                         uint64_t ta_data = 0;
                         int32_t ta_num = 0, ta_max = 0;
                         int ta_valid = 0, ta_check, ta_i;
                         if (!mem_read_ptr(&ctx.target,
-                                          gs_cand + gs_off, &ta_data)) {
+                                          wo + gs_off, &ta_data)) {
                             continue;
                         }
                         if (!mem_read_i32(&ctx.target,
-                                          gs_cand + gs_off + 8, &ta_num)) {
+                                          wo + gs_off + 8, &ta_num)) {
                             continue;
                         }
                         if (!mem_read_i32(&ctx.target,
-                                          gs_cand + gs_off + 12, &ta_max)) {
+                                          wo + gs_off + 12, &ta_max)) {
                             continue;
                         }
                         if (ta_num < 2 || ta_num > 200 || ta_max < ta_num
@@ -553,11 +552,148 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         }
                         if (ta_valid >= 2) {
                             fprintf(stderr,
-                                    "[dump] w+0x%03x->0x%llx "
-                                    "+0x%03x: TArray num=%d "
-                                    "uobj=%d/%d PLAYERARRAY?\n",
-                                    doff, (unsigned long long)gs_cand,
+                                    " [+0x%03x:arr %d uobj=%d/%d]",
                                     gs_off, ta_num, ta_valid, ta_check);
+                            found_ta++;
+                        }
+                    }
+                    fprintf(stderr, "\n");
+                }
+
+                /* --- Actor-based GameState finder --- */
+                fprintf(stderr,
+                        "[dump] --- actor GameState scan ---\n");
+                if (persistent_level != 0) {
+                    uint64_t act_data = 0;
+                    int32_t act_num = 0;
+                    chain_read_tarray(&ctx, persistent_level + 0xe0,
+                                      &act_data, &act_num);
+                    int gs_found = 0;
+                    int ai;
+                    for (ai = 0; ai < act_num && ai < 280 && gs_found < 5;
+                         ++ai) {
+                        uint64_t actor = 0;
+                        uint64_t raw = 0;
+                        mem_read_u64(&ctx.target,
+                                     act_data + (uint64_t)ai * 8, &raw);
+                        if (raw == 0) continue;
+                        /* skip encrypted handles: upper32==lower32 */
+                        if ((raw >> 32) == (raw & 0xFFFFFFFF)
+                            && raw < 0x100000000ULL) {
+                            continue;
+                        }
+                        if (!mem_read_ptr(&ctx.target,
+                                          act_data + (uint64_t)ai * 8,
+                                          &actor)) {
+                            continue;
+                        }
+                        if (actor == 0) continue;
+                        /* scan actor for TArray of UObjects */
+                        uint32_t gs_off;
+                        for (gs_off = 0x28; gs_off <= 0x600;
+                             gs_off += 8) {
+                            uint64_t ta_data2 = 0;
+                            int32_t ta_num2 = 0, ta_max2 = 0;
+                            int ta_valid2 = 0, ta_check2, ta_i2;
+                            if (!mem_read_ptr(&ctx.target,
+                                              actor + gs_off, &ta_data2)) {
+                                continue;
+                            }
+                            if (!mem_read_i32(&ctx.target,
+                                              actor + gs_off + 8,
+                                              &ta_num2)) {
+                                continue;
+                            }
+                            if (!mem_read_i32(&ctx.target,
+                                              actor + gs_off + 12,
+                                              &ta_max2)) {
+                                continue;
+                            }
+                            if (ta_num2 < 5 || ta_num2 > 200
+                                || ta_max2 < ta_num2
+                                || ta_max2 > 1000) {
+                                continue;
+                            }
+                            ta_check2 = ta_num2 < 20 ? ta_num2 : 20;
+                            for (ta_i2 = 0; ta_i2 < ta_check2; ++ta_i2) {
+                                uint64_t elem = 0;
+                                if (!mem_read_ptr(&ctx.target,
+                                        ta_data2 + (uint64_t)ta_i2 * 8,
+                                        &elem)) {
+                                    continue;
+                                }
+                                if (mem_looks_like_uobject(&ctx.target,
+                                                           elem)) {
+                                    ta_valid2++;
+                                }
+                            }
+                            if (ta_valid2 >= 3) {
+                                fprintf(stderr,
+                                        "[dump] actor[%d]=0x%llx "
+                                        "+0x%03x: TArray num=%d "
+                                        "uobj=%d/%d GAMESTATE?\n",
+                                        ai, (unsigned long long)actor,
+                                        gs_off, ta_num2,
+                                        ta_valid2, ta_check2);
+                                gs_found++;
+                            }
+                        }
+                    }
+                    if (gs_found == 0) {
+                        fprintf(stderr,
+                                "[dump] no GameState found in %d actors\n",
+                                act_num < 280 ? act_num : 280);
+                    }
+                }
+
+                /* --- PCM hex dump around FOV --- */
+                fprintf(stderr,
+                        "[dump] --- PCM hex 0x1560..0x15D0 ---\n");
+                if (pcm != 0) {
+                    uint8_t hbuf[0x70];
+                    if (mem_read(&ctx.target, pcm + 0x1560,
+                                 hbuf, sizeof(hbuf))) {
+                        int hi;
+                        for (hi = 0; hi < 0x70; hi += 16) {
+                            fprintf(stderr, "[dump] +%04x:",
+                                    0x1560 + hi);
+                            int hj;
+                            for (hj = 0; hj < 16 && hi + hj < 0x70;
+                                 ++hj) {
+                                fprintf(stderr, " %02x", hbuf[hi + hj]);
+                            }
+                            fprintf(stderr, "\n");
+                        }
+                    }
+                }
+
+                /* --- PC rotation scan --- */
+                fprintf(stderr,
+                        "[dump] --- PC rotation scan ---\n");
+                {
+                    uint8_t pc_buf[0x500];
+                    if (mem_read(&ctx.target, controller,
+                                 pc_buf, sizeof(pc_buf))) {
+                        int pi;
+                        for (pi = 0; pi + 12 <= 0x500; pi += 4) {
+                            float rp, ry, rr;
+                            memcpy(&rp, pc_buf + pi, 4);
+                            memcpy(&ry, pc_buf + pi + 4, 4);
+                            memcpy(&rr, pc_buf + pi + 8, 4);
+                            if (!isfinite(rp) || !isfinite(ry)
+                                || !isfinite(rr)) {
+                                continue;
+                            }
+                            /* pitch: -90..90, yaw: -360..360 */
+                            if (rp > -90.0f && rp < 90.0f
+                                && rp != 0.0f
+                                && ry > -360.0f && ry < 360.0f
+                                && ry != 0.0f) {
+                                fprintf(stderr,
+                                        "[dump] PC+0x%03x rot? "
+                                        "(%.2f,%.2f,%.2f)\n",
+                                        pi, rp, ry, rr);
+                            }
                         }
                     }
                 }
