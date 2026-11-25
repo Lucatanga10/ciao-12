@@ -303,11 +303,19 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     const long budget = 1000000000L / options->fps;
     bool camera_ready;
     bool walk_ready;
-    bool position_locked;
     bool self_filter_ready;
-    int scan_cooldown;
     char missing[512];
     pid_t pid;
+
+    bool position_locked = false;
+    bool levels_found = false;
+    bool camera_scanned = false;
+    uint32_t levels_offset = 0;
+    int scan_cooldown = 0;
+    int levels_cooldown = 0;
+    int diag_tick = 0;
+    int diag_count = 0;
+    const int diag_limit = 20;
 
     memcpy(&mutable_off, off, sizeof(mutable_off));
     memset(&ctx, 0, sizeof(ctx));
@@ -320,10 +328,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     camera_ready = walk_ready &&
                    offsets_feature_ready(&mutable_off, FEAT_LOCAL_CAMERA,
                                          missing, sizeof(missing));
-    position_locked = false;
     self_filter_ready = offsets_feature_ready(&mutable_off, FEAT_SELF_FILTER,
                                               NULL, 0);
-    scan_cooldown = 0;
 
     ipc_init(&link);
     if (!wait_for_link(&link, options->socket_name)) {
@@ -368,169 +374,209 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             (unsigned long long)ctx.target.module_base,
             (unsigned long long)(ctx.target.module_end - ctx.target.module_base));
 
-    {
-        int diag_count = 0;
-        const int diag_limit = 10;
-        int diag_tick = 0;
-
     while (!g_stop) {
         const long started = now_ns();
         uint64_t world = 0;
         uint64_t controller = 0;
         uint64_t self_pawn = 0;
         chain_camera camera;
-        int actor_count;
+        int actor_count = 0;
         int box_count = 0;
         size_t length;
         long spent;
         bool chain_ok = false;
 
-        bool w_ok = chain_resolve_world(&ctx, &world);
-        if (w_ok) {
-            uint64_t gi = 0, lp_data = 0, lp = 0, pc = 0, pcm = 0;
-            int32_t lp_count = 0;
-            bool c_ok = chain_local_controller(&ctx, world, &controller);
-            if (c_ok) {
-                bool cam_ok = chain_read_camera(&ctx, controller, &camera);
-                if (cam_ok) {
-                    chain_ok = true;
-                } else if (diag_count < diag_limit) {
-                    mem_read_ptr(&ctx.target,
-                        controller + mutable_off.apc_player_camera_manager, &pcm);
-                    float fov = 0;
-                    vec3 cloc = {0};
-                    rot3 crot = {0};
-                    uint64_t pov_addr = pcm + mutable_off.apcm_camera_cache_private
-                                      + mutable_off.apcm_pov_in_cache_entry;
-                    chain_read_vector(&ctx, pov_addr + mutable_off.fmvi_location, &cloc);
-                    chain_read_rotator(&ctx, pov_addr + mutable_off.fmvi_rotation, &crot);
-                    mem_read_f32(&ctx.target, pov_addr + mutable_off.fmvi_fov, &fov);
-                    fprintf(stderr,
-                        "[diag] camera FAIL: pcm=0x%llx pov=0x%llx "
-                        "loc=(%.1f,%.1f,%.1f) rot=(%.1f,%.1f,%.1f) fov=%.2f\n",
-                        (unsigned long long)pcm, (unsigned long long)pov_addr,
-                        cloc.x, cloc.y, cloc.z,
-                        crot.pitch, crot.yaw, crot.roll, (double)fov);
-                    diag_count++;
-                }
-            } else if (diag_count < diag_limit) {
-                mem_read_ptr(&ctx.target,
-                    world + mutable_off.uworld_owning_game_instance, &gi);
-                chain_read_tarray(&ctx,
-                    gi + mutable_off.ugameinstance_local_players,
-                    &lp_data, &lp_count);
-                if (lp_count > 0) mem_read_ptr(&ctx.target, lp_data, &lp);
-                if (lp) mem_read_ptr(&ctx.target,
-                    lp + mutable_off.ulocalplayer_player_controller, &pc);
-                fprintf(stderr,
-                    "[diag] controller FAIL: w=0x%llx gi=0x%llx lp_n=%d "
-                    "lp=0x%llx pc=0x%llx\n",
-                    (unsigned long long)world, (unsigned long long)gi,
-                    lp_count, (unsigned long long)lp, (unsigned long long)pc);
-                diag_count++;
-            }
-        } else {
-            diag_tick++;
-            if (diag_count < diag_limit && diag_tick % (options->fps * 2) == 1) {
-                uint64_t raw_ptr = 0;
-                uint64_t gw_addr = ctx.target.module_base + mutable_off.gworld_rva;
-                mem_read(&ctx.target, gw_addr, &raw_ptr, 8);
-                fprintf(stderr,
-                    "[diag] CHAIN FAIL: addr=0x%llx raw=0x%llx\n",
-                    (unsigned long long)gw_addr, (unsigned long long)raw_ptr);
-                diag_count++;
-            }
+        memset(&camera, 0, sizeof(camera));
+
+        if (chain_resolve_world(&ctx, &world) &&
+            chain_local_controller(&ctx, world, &controller) &&
+            chain_read_camera(&ctx, controller, &camera)) {
+            chain_ok = true;
         }
 
         if (chain_ok) {
-
             diag_tick++;
-            if (diag_count < diag_limit && diag_tick % (options->fps * 2) == 1) {
-                uint64_t level = 0;
-                uint64_t actors_data = 0;
-                int32_t actors_n = 0;
-                mem_read_ptr(&ctx.target,
-                    world + mutable_off.uworld_persistent_level, &level);
-                chain_read_tarray(&ctx,
-                    level + mutable_off.ulevel_actors,
-                    &actors_data, &actors_n);
-                fprintf(stderr,
-                    "[diag] chain OK: w=0x%llx cam=(%.0f,%.0f,%.0f) "
-                    "fov=%.1f level=0x%llx actors=%d\n",
-                    (unsigned long long)world,
-                    camera.position.x, camera.position.y, camera.position.z,
-                    camera.fov,
-                    (unsigned long long)level, actors_n);
 
-                if (actors_n > 0 && actors_data) {
-                    uint64_t a0 = 0, a1 = 0;
-                    mem_read_ptr(&ctx.target, actors_data, &a0);
-                    if (actors_n > 10)
-                        mem_read_ptr(&ctx.target, actors_data + 10 * 8, &a1);
-                    uint64_t rc0 = 0;
-                    if (a0) mem_read_ptr(&ctx.target,
-                        a0 + mutable_off.aactor_root_component, &rc0);
-                    double pos0[3] = {0};
-                    float posf[3] = {0};
-                    if (rc0) {
-                        mem_read(&ctx.target,
-                            rc0 + mutable_off.uscene_relative_location,
-                            pos0, 24);
-                        mem_read(&ctx.target,
-                            rc0 + mutable_off.uscene_relative_location,
-                            posf, 12);
-                    }
+            /* --- Scan 1: UWorld::Levels TArray --- */
+            if (!levels_found && levels_cooldown <= 0) {
+                if (chain_scan_levels_offset(&ctx, world, &levels_offset)) {
+                    uint64_t ld = 0;
+                    int32_t lc = 0;
+                    int li;
+                    levels_found = true;
+                    chain_read_tarray(&ctx, world + levels_offset, &ld, &lc);
                     fprintf(stderr,
-                        "[diag] actor[0]=0x%llx rc=0x%llx "
-                        "dbl=(%.0f,%.0f,%.0f) flt=(%.0f,%.0f,%.0f) "
-                        "actor[10]=0x%llx\n",
-                        (unsigned long long)a0, (unsigned long long)rc0,
-                        pos0[0], pos0[1], pos0[2],
-                        (double)posf[0], (double)posf[1], (double)posf[2],
-                        (unsigned long long)a1);
+                            "[scan] levels: world+0x%x, %d livelli\n",
+                            levels_offset, lc);
+                    for (li = 0; li < lc && li < 20; ++li) {
+                        uint64_t lvl = 0;
+                        uint64_t la_d = 0;
+                        int32_t la_n = 0;
+                        if (!mem_read_ptr(&ctx.target,
+                                          ld + (uint64_t)li * 8, &lvl)) {
+                            continue;
+                        }
+                        chain_read_tarray(&ctx,
+                                          lvl + mutable_off.ulevel_actors,
+                                          &la_d, &la_n);
+                        fprintf(stderr,
+                                "[scan]   [%d] 0x%llx actors=%d\n",
+                                li, (unsigned long long)lvl, la_n);
+                    }
+                } else {
+                    levels_cooldown = options->fps * 5;
                 }
-                diag_count++;
+            }
+            if (levels_cooldown > 0) {
+                levels_cooldown--;
             }
 
-            if (!position_locked && scan_cooldown <= 0) {
-                uint32_t rc_off = 0;
-                uint32_t loc_off = 0;
-                bool is_float = false;
+            /* --- Scan 2: camera non-zero nel PCM --- */
+            if (!camera_scanned &&
+                camera.position.x == 0.0 &&
+                camera.position.y == 0.0 &&
+                camera.position.z == 0.0) {
+                uint64_t pcm = 0;
+                mem_read_ptr(&ctx.target,
+                             controller + mutable_off.apc_player_camera_manager,
+                             &pcm);
+                if (pcm != 0) {
+                    uint32_t cam_off = 0;
+                    if (chain_scan_camera_offset(&ctx, pcm, &cam_off)) {
+                        uint32_t old_cache = mutable_off.apcm_camera_cache_private;
+                        mutable_off.apcm_camera_cache_private = cam_off;
+                        mutable_off.apcm_pov_in_cache_entry = 0;
+                        if (chain_read_camera(&ctx, controller, &camera)) {
+                            fprintf(stderr,
+                                    "[scan] camera: PCM+0x%x "
+                                    "pos=(%.0f,%.0f,%.0f) fov=%.1f\n",
+                                    cam_off,
+                                    camera.position.x, camera.position.y,
+                                    camera.position.z, camera.fov);
+                        } else {
+                            mutable_off.apcm_camera_cache_private = old_cache;
+                            fprintf(stderr,
+                                    "[scan] camera: PCM+0x%x trovato ma "
+                                    "read fallita, ripristino 0x%x\n",
+                                    cam_off, old_cache);
+                        }
+                    } else {
+                        fprintf(stderr,
+                                "[scan] camera: nessun dato non-zero nel PCM\n");
+                    }
+                    camera_scanned = true;
+                }
+            }
 
-                if (chain_autoscan_position(&ctx, world,
-                                            &rc_off, &loc_off, &is_float)) {
-                    mutable_off.aactor_root_component = rc_off;
-                    mutable_off.has_aactor_root_component = true;
-                    mutable_off.uscene_relative_location = loc_off;
-                    mutable_off.has_uscene_relative_location = true;
-                    mutable_off.uscene_location_is_float = is_float;
-                    position_locked = true;
-                    fprintf(stderr,
-                            "[scan] posizione trovata: rc=+0x%x loc=+0x%x %s\n",
-                            rc_off, loc_off, is_float ? "float" : "double");
-                } else {
-                    scan_cooldown = options->fps;
+            /* --- Scan 3: RootComponent + RelativeLocation --- */
+            if (!position_locked && scan_cooldown <= 0) {
+                bool found_pos = false;
+
+                if (levels_found) {
+                    uint64_t ld = 0;
+                    int32_t lc = 0;
+                    int li;
+                    chain_read_tarray(&ctx, world + levels_offset, &ld, &lc);
+                    for (li = 0; li < lc && !found_pos; ++li) {
+                        uint64_t lvl = 0;
+                        uint32_t rc_off = 0, loc_off = 0;
+                        bool is_float = false;
+                        if (!mem_read_ptr(&ctx.target,
+                                          ld + (uint64_t)li * 8, &lvl)) {
+                            continue;
+                        }
+                        if (chain_autoscan_position_level(&ctx, lvl,
+                                &rc_off, &loc_off, &is_float)) {
+                            mutable_off.aactor_root_component = rc_off;
+                            mutable_off.has_aactor_root_component = true;
+                            mutable_off.uscene_relative_location = loc_off;
+                            mutable_off.has_uscene_relative_location = true;
+                            mutable_off.uscene_location_is_float = is_float;
+                            position_locked = true;
+                            found_pos = true;
+                            fprintf(stderr,
+                                    "[scan] posizione: levels[%d] "
+                                    "rc=+0x%x loc=+0x%x %s\n",
+                                    li, rc_off, loc_off,
+                                    is_float ? "float" : "double");
+                        }
+                    }
+                }
+
+                if (!found_pos) {
+                    uint32_t rc_off = 0, loc_off = 0;
+                    bool is_float = false;
+                    if (chain_autoscan_position(&ctx, world,
+                            &rc_off, &loc_off, &is_float)) {
+                        mutable_off.aactor_root_component = rc_off;
+                        mutable_off.has_aactor_root_component = true;
+                        mutable_off.uscene_relative_location = loc_off;
+                        mutable_off.has_uscene_relative_location = true;
+                        mutable_off.uscene_location_is_float = is_float;
+                        position_locked = true;
+                        fprintf(stderr,
+                                "[scan] posizione (persistent): "
+                                "rc=+0x%x loc=+0x%x %s\n",
+                                rc_off, loc_off,
+                                is_float ? "float" : "double");
+                    } else {
+                        scan_cooldown = options->fps * 2;
+                    }
                 }
             }
             if (scan_cooldown > 0) {
-                scan_cooldown -= 1;
+                scan_cooldown--;
             }
 
+            /* --- Self filter --- */
             if (self_filter_ready) {
                 chain_local_pawn(&ctx, controller, &self_pawn);
             }
 
-            actor_count = chain_collect_actors(&ctx, world, self_pawn,
-                                               camera.position,
-                                               options->max_meters * 100.0,
-                                               actors, OJBS_MAX_ACTORS);
+            /* --- Raccolta attori --- */
+            if (levels_found) {
+                actor_count = chain_collect_actors_all_levels(
+                    &ctx, world, levels_offset,
+                    self_pawn, camera.position,
+                    options->max_meters * 100.0,
+                    actors, OJBS_MAX_ACTORS);
+            } else {
+                actor_count = chain_collect_actors(
+                    &ctx, world, self_pawn,
+                    camera.position,
+                    options->max_meters * 100.0,
+                    actors, OJBS_MAX_ACTORS);
+            }
 
+            /* --- Disegno ESP --- */
             box_count = build_live_boxes(&ctx, &camera, actors, actor_count,
                                          link.screen_width, link.screen_height,
                                          boxes, OJBS_MAX_BOXES);
+
+            /* --- Diagnostica periodica --- */
+            if (diag_count < diag_limit &&
+                diag_tick % (options->fps * 3) == 1) {
+                fprintf(stderr,
+                        "[diag] cam=(%.0f,%.0f,%.0f) fov=%.1f "
+                        "actors=%d boxes=%d levels=%s pos=%s\n",
+                        camera.position.x, camera.position.y,
+                        camera.position.z, camera.fov,
+                        actor_count, box_count,
+                        levels_found ? "si" : "no",
+                        position_locked ? "si" : "scan");
+                diag_count++;
+            }
+        } else {
+            diag_tick++;
+            if (diag_count < diag_limit &&
+                diag_tick % (options->fps * 3) == 1) {
+                fprintf(stderr, "[diag] catena fallita, riprovo\n");
+                diag_count++;
+            }
         }
 
-        length = proto_encode_frame(boxes, (uint16_t)box_count, frame, sizeof(frame));
+        length = proto_encode_frame(boxes, (uint16_t)box_count,
+                                     frame, sizeof(frame));
         if (length == 0) {
             length = proto_encode_frame(NULL, 0, frame, sizeof(frame));
         }
@@ -551,7 +597,6 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         sleep_ns(budget - spent);
     }
 
-    } /* diag scope */
     ipc_close(&link);
     return 0;
 }
