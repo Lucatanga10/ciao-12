@@ -493,6 +493,137 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                 }
 
+                /* --- Scan A: GameInstance world scan --- */
+                fprintf(stderr,
+                        "[dump] --- GameInstance world scan ---\n");
+                {
+                    uint64_t gi = 0;
+                    mem_read_ptr(&ctx.target,
+                                 world + mutable_off.uworld_owning_game_instance,
+                                 &gi);
+                    fprintf(stderr, "[dump] GI=0x%llx\n",
+                            (unsigned long long)gi);
+                    if (gi != 0) {
+                        uint32_t gi_off;
+                        for (gi_off = 0x0; gi_off <= 0x800; gi_off += 8) {
+                            uint64_t cand = 0;
+                            uint64_t cand_level = 0;
+                            uint64_t cand_act_data = 0;
+                            int32_t cand_act_num = 0;
+
+                            if (!mem_read_ptr(&ctx.target, gi + gi_off,
+                                              &cand)) {
+                                continue;
+                            }
+                            if (cand == 0 || cand == world) continue;
+                            if (!mem_looks_like_uobject(&ctx.target, cand)) {
+                                continue;
+                            }
+
+                            /* Candidato: check PersistentLevel pattern */
+                            if (!mem_read_ptr(&ctx.target, cand + 0x20,
+                                              &cand_level)) {
+                                continue;
+                            }
+                            if (cand_level == 0) continue;
+                            if (!mem_looks_like_uobject(&ctx.target,
+                                                        cand_level)) {
+                                continue;
+                            }
+
+                            /* Actors nel level */
+                            if (!mem_read_ptr(&ctx.target,
+                                              cand_level + 0xe0,
+                                              &cand_act_data)) {
+                                continue;
+                            }
+                            if (!mem_read_i32(&ctx.target,
+                                              cand_level + 0xe0 + 8,
+                                              &cand_act_num)) {
+                                continue;
+                            }
+                            if (cand_act_num <= 0 || cand_act_num > 100000) {
+                                continue;
+                            }
+
+                            fprintf(stderr,
+                                    "[dump] GI+0x%03x -> world=0x%llx "
+                                    "level=0x%llx actors=%d\n",
+                                    gi_off, (unsigned long long)cand,
+                                    (unsigned long long)cand_level,
+                                    cand_act_num);
+                        }
+                    }
+                }
+
+                /* --- Scan B: GWorld RVA vicinity (+-0x2000) --- */
+                fprintf(stderr,
+                        "[dump] --- GWorld RVA vicinity scan ---\n");
+                {
+                    uint8_t rva_buf[0x4000];
+                    uint64_t rva_base = ctx.target.module_base
+                                      + mutable_off.gworld_rva - 0x2000;
+                    if (mem_read(&ctx.target, rva_base,
+                                 rva_buf, sizeof(rva_buf))) {
+                        int ri;
+                        for (ri = 0; ri < 0x4000; ri += 8) {
+                            uint64_t cand = 0;
+                            uint64_t cand_level = 0;
+                            uint64_t cand_act_data = 0;
+                            int32_t cand_act_num = 0;
+
+                            if (ri == 0x2000) continue; /* skip GWorld */
+
+                            memcpy(&cand, rva_buf + ri, 8);
+                            if (cand == 0 || cand == world) continue;
+                            if (!mem_ptr_plausible(cand)) continue;
+                            if (!mem_looks_like_uobject(&ctx.target, cand)) {
+                                continue;
+                            }
+
+                            if (!mem_read_ptr(&ctx.target, cand + 0x20,
+                                              &cand_level)) {
+                                continue;
+                            }
+                            if (cand_level == 0) continue;
+                            if (!mem_looks_like_uobject(&ctx.target,
+                                                        cand_level)) {
+                                continue;
+                            }
+                            if (!mem_read_ptr(&ctx.target,
+                                              cand_level + 0xe0,
+                                              &cand_act_data)) {
+                                continue;
+                            }
+                            if (!mem_read_i32(&ctx.target,
+                                              cand_level + 0xe0 + 8,
+                                              &cand_act_num)) {
+                                continue;
+                            }
+                            if (cand_act_num <= 0 || cand_act_num > 100000) {
+                                continue;
+                            }
+
+                            fprintf(stderr,
+                                    "[dump] RVA%+d (0x%llx) -> "
+                                    "world=0x%llx level=0x%llx actors=%d\n",
+                                    ri - 0x2000,
+                                    (unsigned long long)(rva_base + ri),
+                                    (unsigned long long)cand,
+                                    (unsigned long long)cand_level,
+                                    cand_act_num);
+                        }
+                    } else {
+                        fprintf(stderr,
+                                "[dump] RVA bulk read failed\n");
+                    }
+                }
+
+                /* --- Scan C: check se GWorld cambia tra i frame --- */
+                fprintf(stderr,
+                        "[dump] --- GWorld value=0x%llx ---\n",
+                        (unsigned long long)world);
+
                 fprintf(stderr, "[dump] --- fine ---\n");
                 world_dumped = true;
             }
