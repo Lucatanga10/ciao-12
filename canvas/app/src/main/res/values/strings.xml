@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OJBS Overlay</string>
+    <string name="channel_name">Overlay</string>
+    <string name="notification_title">Overlay attivo</string>
+    <string name="notification_text">Disegno box sopra le altre app</string>
+    <string name="action_stop">Ferma</string>
+    <string name="button_permission">Permesso overlay</string>
+    <string name="button_notifications">Permesso notifiche</string>
+    <string name="button_start_socket">Avvia (socket)</string>
+    <string name="button_start_demo">Avvia (demo)</string>
+    <string name="button_stop">Ferma overlay</string>
+    <string name="status_format">overlay: %1$s\nnotifiche: %2$s\nsocket: @%3$s</string>
+</resources>
