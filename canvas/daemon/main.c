@@ -440,6 +440,53 @@ static int run_live(const cli_options *options, const ue_offsets *off)
 
         if (chain_ok) {
 
+            if (diag_count < diag_limit) {
+                uint64_t level = 0;
+                uint64_t actors_data = 0;
+                int32_t actors_n = 0;
+                mem_read_ptr(&ctx.target,
+                    world + mutable_off.uworld_persistent_level, &level);
+                chain_read_tarray(&ctx,
+                    level + mutable_off.ulevel_actors,
+                    &actors_data, &actors_n);
+                fprintf(stderr,
+                    "[diag] chain OK: w=0x%llx cam=(%.0f,%.0f,%.0f) "
+                    "fov=%.1f level=0x%llx actors=%d\n",
+                    (unsigned long long)world,
+                    camera.position.x, camera.position.y, camera.position.z,
+                    camera.fov,
+                    (unsigned long long)level, actors_n);
+
+                if (actors_n > 0 && actors_data) {
+                    uint64_t a0 = 0, a1 = 0;
+                    mem_read_ptr(&ctx.target, actors_data, &a0);
+                    if (actors_n > 10)
+                        mem_read_ptr(&ctx.target, actors_data + 10 * 8, &a1);
+                    uint64_t rc0 = 0;
+                    if (a0) mem_read_ptr(&ctx.target,
+                        a0 + mutable_off.aactor_root_component, &rc0);
+                    double pos0[3] = {0};
+                    float posf[3] = {0};
+                    if (rc0) {
+                        mem_read(&ctx.target,
+                            rc0 + mutable_off.uscene_relative_location,
+                            pos0, 24);
+                        mem_read(&ctx.target,
+                            rc0 + mutable_off.uscene_relative_location,
+                            posf, 12);
+                    }
+                    fprintf(stderr,
+                        "[diag] actor[0]=0x%llx rc=0x%llx "
+                        "dbl=(%.0f,%.0f,%.0f) flt=(%.0f,%.0f,%.0f) "
+                        "actor[10]=0x%llx\n",
+                        (unsigned long long)a0, (unsigned long long)rc0,
+                        pos0[0], pos0[1], pos0[2],
+                        (double)posf[0], (double)posf[1], (double)posf[2],
+                        (unsigned long long)a1);
+                }
+                diag_count++;
+            }
+
             if (!position_locked && scan_cooldown <= 0) {
                 uint32_t rc_off = 0;
                 uint32_t loc_off = 0;
