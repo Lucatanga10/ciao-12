@@ -376,6 +376,10 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             (unsigned long long)ctx.target.module_base,
             (unsigned long long)(ctx.target.module_end - ctx.target.module_base));
 
+    fprintf(stderr, "[wait] 5 secondi — torna su Fortnite\n");
+    sleep_ns(5000000000L);
+    fprintf(stderr, "[wait] via!\n");
+
     while (!g_stop) {
         const long started = now_ns();
         uint64_t world = 0;
@@ -427,10 +431,15 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                 mem_read_ptr(&ctx.target,
                              world + mutable_off.uworld_persistent_level,
                              &persistent_level);
+                mem_read_ptr(&ctx.target,
+                             controller + mutable_off.apc_player_camera_manager,
+                             &pcm);
                 fprintf(stderr,
-                        "[dump] world=0x%llx persistent_level=0x%llx\n",
+                        "[dump] world=0x%llx persistent_level=0x%llx "
+                        "pcm=0x%llx\n",
                         (unsigned long long)world,
-                        (unsigned long long)persistent_level);
+                        (unsigned long long)persistent_level,
+                        (unsigned long long)pcm);
 
                 fprintf(stderr, "[dump] --- TArray scan world+0x0..0x500 ---\n");
                 for (doff = 0x0; doff <= 0x500; doff += 8) {
@@ -482,6 +491,131 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                 mem_read_ptr(&ctx.target,
                              controller + mutable_off.apc_player_camera_manager,
                              &pcm);
+                /* --- Match detector: pawn raw read --- */
+                {
+                    uint64_t pawn_raw = 0;
+                    mem_read_u64(&ctx.target, controller + 0x80,
+                                 &pawn_raw);
+                    fprintf(stderr,
+                            "[dump] pawn_raw(PC+0x80)=0x%llx %s\n",
+                            (unsigned long long)pawn_raw,
+                            pawn_raw == 0 ? "LOBBY" : "IN-MATCH");
+                }
+
+                /* --- GameState scan: world ptrs → PlayerArray --- */
+                fprintf(stderr,
+                        "[dump] --- GameState scan ---\n");
+                for (doff = 0x0; doff <= 0x200; doff += 8) {
+                    uint64_t gs_cand = 0;
+                    if (!mem_read_ptr(&ctx.target, world + doff,
+                                      &gs_cand)) {
+                        continue;
+                    }
+                    if (gs_cand == 0 || gs_cand == persistent_level) {
+                        continue;
+                    }
+                    if (!mem_looks_like_uobject(&ctx.target, gs_cand)) {
+                        continue;
+                    }
+                    /* scan candidate for TArray of UObjects */
+                    uint32_t gs_off;
+                    for (gs_off = 0x28; gs_off <= 0x400; gs_off += 8) {
+                        uint64_t ta_data = 0;
+                        int32_t ta_num = 0, ta_max = 0;
+                        int ta_valid = 0, ta_check, ta_i;
+                        if (!mem_read_ptr(&ctx.target,
+                                          gs_cand + gs_off, &ta_data)) {
+                            continue;
+                        }
+                        if (!mem_read_i32(&ctx.target,
+                                          gs_cand + gs_off + 8, &ta_num)) {
+                            continue;
+                        }
+                        if (!mem_read_i32(&ctx.target,
+                                          gs_cand + gs_off + 12, &ta_max)) {
+                            continue;
+                        }
+                        if (ta_num < 2 || ta_num > 200 || ta_max < ta_num
+                            || ta_max > 1000) {
+                            continue;
+                        }
+                        ta_check = ta_num < 20 ? ta_num : 20;
+                        for (ta_i = 0; ta_i < ta_check; ++ta_i) {
+                            uint64_t elem = 0;
+                            if (!mem_read_ptr(&ctx.target,
+                                              ta_data + (uint64_t)ta_i * 8,
+                                              &elem)) {
+                                continue;
+                            }
+                            if (mem_looks_like_uobject(&ctx.target, elem)) {
+                                ta_valid++;
+                            }
+                        }
+                        if (ta_valid >= 2) {
+                            fprintf(stderr,
+                                    "[dump] w+0x%03x->0x%llx "
+                                    "+0x%03x: TArray num=%d "
+                                    "uobj=%d/%d PLAYERARRAY?\n",
+                                    doff, (unsigned long long)gs_cand,
+                                    gs_off, ta_num, ta_valid, ta_check);
+                        }
+                    }
+                }
+
+                /* --- PCM float position scan --- */
+                fprintf(stderr,
+                        "[dump] --- PCM float scan ---\n");
+                if (pcm != 0) {
+                    uint8_t fbuf[0x3000];
+                    if (mem_read(&ctx.target, pcm, fbuf, sizeof(fbuf))) {
+                        int fi;
+                        for (fi = 0; fi + 12 <= 0x3000; fi += 4) {
+                            float fx, fy, fz;
+                            double fmag;
+                            memcpy(&fx, fbuf + fi, 4);
+                            memcpy(&fy, fbuf + fi + 4, 4);
+                            memcpy(&fz, fbuf + fi + 8, 4);
+                            if (!isfinite(fx) || !isfinite(fy)
+                                || !isfinite(fz)) {
+                                continue;
+                            }
+                            if (fx == 0.0f && fy == 0.0f && fz == 0.0f) {
+                                continue;
+                            }
+                            fmag = sqrt((double)fx*fx
+                                      + (double)fy*fy
+                                      + (double)fz*fz);
+                            if (fmag > 1000.0 && fmag < 1e7) {
+                                fprintf(stderr,
+                                        "[dump] PCM+0x%04x flt "
+                                        "(%.0f,%.0f,%.0f) mag=%.0f\n",
+                                        fi, fx, fy, fz, fmag);
+                            }
+                        }
+                        /* also try doubles at every 8 bytes */
+                        for (fi = 0; fi + 24 <= 0x3000; fi += 8) {
+                            double dx, dy, dz, dmag;
+                            memcpy(&dx, fbuf + fi, 8);
+                            memcpy(&dy, fbuf + fi + 8, 8);
+                            memcpy(&dz, fbuf + fi + 16, 8);
+                            if (!isfinite(dx) || !isfinite(dy)
+                                || !isfinite(dz)) {
+                                continue;
+                            }
+                            if (dx == 0.0 && dy == 0.0 && dz == 0.0) {
+                                continue;
+                            }
+                            dmag = sqrt(dx*dx + dy*dy + dz*dz);
+                            if (dmag > 1000.0 && dmag < 1e7) {
+                                fprintf(stderr,
+                                        "[dump] PCM+0x%04x dbl "
+                                        "(%.0f,%.0f,%.0f) mag=%.0f\n",
+                                        fi, dx, dy, dz, dmag);
+                            }
+                        }
+                    }
+                }
+
                 /* --- Deep actor probe --- */
                 fprintf(stderr,
                         "[dump] --- actor probe (first 10) ---\n");
@@ -509,7 +643,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         fprintf(stderr,
                                 "[dump] actor[%d]=0x%llx", ai,
                                 (unsigned long long)actor);
-                        for (aoff = 0x100; aoff <= 0x300 && rc_hits < 3;
+                        for (aoff = 0x100; aoff <= 0x500 && rc_hits < 3;
                              aoff += 8) {
                             uint64_t maybe_rc = 0;
                             if (!mem_read_ptr(&ctx.target,
@@ -560,9 +694,6 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                 }
 
                 /* --- PCM data map (which regions have data) --- */
-                mem_read_ptr(&ctx.target,
-                             controller + mutable_off.apc_player_camera_manager,
-                             &pcm);
                 fprintf(stderr,
                         "[dump] --- PCM=0x%llx data map ---\n",
                         (unsigned long long)pcm);
@@ -916,8 +1047,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             /* --- Diagnostica periodica --- */
             if (diag_count < diag_limit &&
                 diag_tick % (options->fps * 3) == 1) {
-                /* read raw actor count from PersistentLevel */
                 int32_t raw_actors = 0;
+                uint64_t pawn_raw = 0;
                 {
                     uint64_t pl = 0;
                     mem_read_ptr(&ctx.target,
@@ -927,11 +1058,14 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         mem_read_i32(&ctx.target, pl + 0xe0 + 8,
                                      &raw_actors);
                     }
+                    mem_read_u64(&ctx.target, controller + 0x80,
+                                 &pawn_raw);
                 }
                 fprintf(stderr,
-                        "[diag] w=0x%llx cam=(%.0f,%.0f,%.0f) fov=%.1f "
-                        "raw=%d act=%d box=%d lv=%s pos=%s\n",
+                        "[diag] w=0x%llx pawn=0x%llx cam=(%.0f,%.0f,%.0f) "
+                        "fov=%.1f raw=%d act=%d box=%d lv=%s pos=%s\n",
                         (unsigned long long)world,
+                        (unsigned long long)pawn_raw,
                         camera.position.x, camera.position.y,
                         camera.position.z, camera.fov,
                         raw_actors, actor_count, box_count,
