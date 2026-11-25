@@ -261,6 +261,17 @@ bool chain_actor_position(const chain_ctx *ctx, uint64_t actor, vec3 *out)
         return false;
     }
 
+    if (ctx->off->uscene_location_is_float) {
+        float raw[3];
+        if (!mem_read(&ctx->target,
+                      root + ctx->off->uscene_relative_location,
+                      raw, sizeof(raw))) {
+            return false;
+        }
+        *out = vec3_make((double)raw[0], (double)raw[1], (double)raw[2]);
+        return vec3_plausible(*out, OJBS_WORLD_LIMIT);
+    }
+
     return chain_read_vector(ctx, root + ctx->off->uscene_relative_location, out);
 }
 
@@ -347,4 +358,180 @@ int chain_collect_actors(const chain_ctx *ctx, uint64_t world,
     }
 
     return found;
+}
+
+#define SCAN_ACTORS 20
+#define SCAN_RC_MIN 0x100u
+#define SCAN_RC_MAX 0x220u
+#define SCAN_RC_STEP 8u
+#define SCAN_LOC_MIN 0x100u
+#define SCAN_LOC_MAX 0x200u
+#define SCAN_DIVERSITY 100.0
+
+static bool scan_try_doubles(const chain_ctx *ctx,
+                             const uint64_t *components, int comp_count,
+                             uint32_t loc_off, int *out_pos_count)
+{
+    vec3 first;
+    int pos_count = 0;
+    bool have_first = false;
+    int i;
+
+    for (i = 0; i < comp_count; ++i) {
+        double raw[3];
+        vec3 pos;
+        if (components[i] == 0) {
+            continue;
+        }
+        if (!mem_read(&ctx->target, components[i] + loc_off, raw, sizeof(raw))) {
+            continue;
+        }
+        pos = vec3_make(raw[0], raw[1], raw[2]);
+        if (!vec3_plausible(pos, OJBS_WORLD_LIMIT)) {
+            continue;
+        }
+        if (pos.x == 0.0 && pos.y == 0.0 && pos.z == 0.0) {
+            continue;
+        }
+        if (!have_first) {
+            first = pos;
+            have_first = true;
+        }
+        pos_count += 1;
+        if (pos_count >= 3 && vec3_length(vec3_sub(pos, first)) > SCAN_DIVERSITY) {
+            *out_pos_count = pos_count;
+            return true;
+        }
+    }
+    *out_pos_count = pos_count;
+    return false;
+}
+
+static bool scan_try_floats(const chain_ctx *ctx,
+                            const uint64_t *components, int comp_count,
+                            uint32_t loc_off, int *out_pos_count)
+{
+    vec3 first;
+    int pos_count = 0;
+    bool have_first = false;
+    int i;
+
+    for (i = 0; i < comp_count; ++i) {
+        float raw[3];
+        vec3 pos;
+        if (components[i] == 0) {
+            continue;
+        }
+        if (!mem_read(&ctx->target, components[i] + loc_off, raw, sizeof(raw))) {
+            continue;
+        }
+        pos = vec3_make((double)raw[0], (double)raw[1], (double)raw[2]);
+        if (!vec3_plausible(pos, OJBS_WORLD_LIMIT)) {
+            continue;
+        }
+        if (pos.x == 0.0 && pos.y == 0.0 && pos.z == 0.0) {
+            continue;
+        }
+        if (!have_first) {
+            first = pos;
+            have_first = true;
+        }
+        pos_count += 1;
+        if (pos_count >= 3 && vec3_length(vec3_sub(pos, first)) > SCAN_DIVERSITY) {
+            *out_pos_count = pos_count;
+            return true;
+        }
+    }
+    *out_pos_count = pos_count;
+    return false;
+}
+
+bool chain_autoscan_position(const chain_ctx *ctx, uint64_t world,
+                             uint32_t *out_rc_off, uint32_t *out_loc_off,
+                             bool *out_loc_is_float)
+{
+    uint64_t level = 0;
+    uint64_t actors_data = 0;
+    int32_t actors_count = 0;
+    uint64_t actor_ptrs[SCAN_ACTORS];
+    int test_count = 0;
+    uint32_t rc_off;
+    uint32_t loc_off;
+    int step;
+    int i;
+
+    if (ctx == NULL || ctx->off == NULL) {
+        return false;
+    }
+    if (!ctx->off->has_uworld_persistent_level || !ctx->off->has_ulevel_actors) {
+        return false;
+    }
+
+    if (!mem_read_ptr(&ctx->target,
+                      world + ctx->off->uworld_persistent_level, &level)) {
+        return false;
+    }
+    if (!chain_read_tarray(ctx, level + ctx->off->ulevel_actors,
+                           &actors_data, &actors_count)) {
+        return false;
+    }
+    if (actors_count < 10) {
+        return false;
+    }
+
+    step = actors_count / SCAN_ACTORS;
+    if (step < 1) {
+        step = 1;
+    }
+    for (i = 3; i < actors_count && test_count < SCAN_ACTORS; i += step) {
+        uint64_t a = 0;
+        if (mem_read_ptr(&ctx->target,
+                         actors_data + (uint64_t)i * 8, &a) && a != 0) {
+            actor_ptrs[test_count++] = a;
+        }
+    }
+    if (test_count < 5) {
+        return false;
+    }
+
+    for (rc_off = SCAN_RC_MIN; rc_off <= SCAN_RC_MAX; rc_off += SCAN_RC_STEP) {
+        uint64_t components[SCAN_ACTORS];
+        int readable = 0;
+
+        memset(components, 0, sizeof(components));
+        for (i = 0; i < test_count; ++i) {
+            uint64_t comp = 0;
+            if (mem_read_ptr(&ctx->target, actor_ptrs[i] + rc_off, &comp)) {
+                components[i] = comp;
+                readable += 1;
+            }
+        }
+        if (readable < 3) {
+            continue;
+        }
+
+        for (loc_off = SCAN_LOC_MIN; loc_off <= SCAN_LOC_MAX; loc_off += 8) {
+            int pos_count = 0;
+            if (scan_try_doubles(ctx, components, test_count,
+                                 loc_off, &pos_count)) {
+                *out_rc_off = rc_off;
+                *out_loc_off = loc_off;
+                *out_loc_is_float = false;
+                return true;
+            }
+        }
+
+        for (loc_off = SCAN_LOC_MIN; loc_off <= SCAN_LOC_MAX; loc_off += 4) {
+            int pos_count = 0;
+            if (scan_try_floats(ctx, components, test_count,
+                                loc_off, &pos_count)) {
+                *out_rc_off = rc_off;
+                *out_loc_off = loc_off;
+                *out_loc_is_float = true;
+                return true;
+            }
+        }
+    }
+
+    return false;
 }

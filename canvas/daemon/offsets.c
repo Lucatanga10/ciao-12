@@ -5,60 +5,61 @@
 #include <string.h>
 
 static const ue_offsets g_default = {
-    /* [build identity | letta dal pacchetto installato 2026-11-24]
-     * versionName 43.10.0-60118918-Android, versionCode 60118918
-     * libUnreal.so GNU build-id 686f70d3f37d72bcf20d3f51592b244792187211
-     * NOTA: gli offset qui sotto vengono da un dump SDK la cui build NON e'
-     * dichiarata. Finche' non combacia con questa riga restano ipotesi. */
-    .build_tag = "43.10.0-60118918-Android",
-    .dump_date = "2026-11-24",
+    /* [build identity | Frida probe 43.11 Android | 2026-11-25] */
+    .build_tag = "43.11-Android",
+    .dump_date = "2026-11-25",
 
     .module_name = "libUnreal.so",
 
-    .gworld_rva = 0,
-    .has_gworld_rva = false,
+    /* [rva 0x19cec360 | build 43.11 | Frida probe 2026-11-25 | verified live] */
+    .gworld_rva = 0x19cec360,
+    .has_gworld_rva = true,
 
-    .uworld_persistent_level = 0x40,
-    .uworld_net_driver = 0x48,
-    .uworld_game_state = 0x1D0,
-    .uworld_levels = 0x1E8,
-    .uworld_owning_game_instance = 0x248,
+    /* [field offset | Frida probe 2026-11-25 | verified live]
+     * W+0x20->Level, W+0x170->GI confermati dalla catena GI->LP->PC->PCM->FOV=79.5 */
+    .uworld_persistent_level = 0x20,
+    .uworld_net_driver = 0,
+    .uworld_game_state = 0,
+    .uworld_levels = 0,
+    .uworld_owning_game_instance = 0x170,
     .has_uworld_persistent_level = true,
-    .has_uworld_net_driver = true,
-    .has_uworld_game_state = true,
-    .has_uworld_levels = true,
+    .has_uworld_net_driver = false,
+    .has_uworld_game_state = false,
+    .has_uworld_levels = false,
     .has_uworld_owning_game_instance = true,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live] */
-    .ugameinstance_local_players = 0x38,
+    /* [field offset | Frida probe 2026-11-25 | verified live]
+     * GI+0x168->TArray LP, confermato: 1 player, LP[0] valido */
+    .ugameinstance_local_players = 0x168,
     .has_ugameinstance_local_players = true,
 
-    /* UPlayer::PlayerController non e' riflesso: ULocalPlayer nel dump parte
-     * a 0x48 con UnknownData. Si deriva a runtime nella finestra 0x28..0x48
-     * cercando il puntatore il cui CameraManager torna indietro a lui. */
-    .ulocalplayer_player_controller = 0,
-    .has_ulocalplayer_player_controller = false,
+    /* [field offset | Frida probe 2026-11-25 | verified live]
+     * LP+0x20->PC, confermato tramite PC->PCM->FOV=79.5 */
+    .ulocalplayer_player_controller = 0x20,
+    .has_ulocalplayer_player_controller = true,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live] */
-    .apc_acknowledged_pawn = 0x318,
+    /* [field offset | Frida probe 2026-11-25 | verified live / encrypted]
+     * PC+0x80 punta al pawn (match con actors[213] in probe7) ma il
+     * puntatore e' cifrato da Epic: legge 0x1a0000001a. Self-filter
+     * disabilitato per ora.
+     * PC+0x338->PCM confermato da FOV=79.5 a PCM+0x15B0 */
+    .apc_acknowledged_pawn = 0,
     .apc_pawn = 0,
-    .apc_player_camera_manager = 0x328,
+    .apc_player_camera_manager = 0x338,
     .apc_player_state = 0,
-    .has_apc_acknowledged_pawn = true,
+    .has_apc_acknowledged_pawn = false,
     .has_apc_pawn = false,
     .has_apc_player_camera_manager = true,
     .has_apc_player_state = false,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live]
-     * POV sta a 0x10 dentro FCameraCacheEntry, che e' a 0x1590. */
-    .apcm_camera_cache_private = 0x1590,
-    .apcm_pov_in_cache_entry = 0x10,
+    /* [field offset | Frida probe 2026-11-25 | verified live]
+     * PCM+0x1580=CamLoc(3d), PCM+0x1598=CamRot(3d), PCM+0x15B0=FOV(f32)=79.49
+     * Zero nella lobby, popolato in partita. */
+    .apcm_camera_cache_private = 0x1580,
+    .apcm_pov_in_cache_entry = 0x0,
     .has_apcm_camera_cache_private = true,
     .has_apcm_pov_in_cache_entry = true,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live]
-     * FMinimalViewInfo size 0x910: Location FVector 0x0, Rotation FRotator
-     * 0x18, FOV float 0x30. */
     .fmvi_location = 0x0,
     .fmvi_rotation = 0x18,
     .fmvi_fov = 0x30,
@@ -66,29 +67,32 @@ static const ue_offsets g_default = {
     .has_fmvi_rotation = true,
     .has_fmvi_fov = true,
 
-    .ulevel_actors = 0,
-    .ulevel_owning_world = 0xF0,
-    .has_ulevel_actors = false,
-    .has_ulevel_owning_world = true,
+    /* [field offset | Frida probe 2026-11-25 | verified live]
+     * Level+0xe0->TArray actors, confermato: 280 attori in lobby */
+    .ulevel_actors = 0xe0,
+    .ulevel_owning_world = 0,
+    .has_ulevel_actors = true,
+    .has_ulevel_owning_world = false,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live] */
+    /* [field offset | HYPOTHESIS | non verificato: lobby non popola posizioni]
+     * SDK dump 43.10 dice 0x1B0, community Windows dice 0x130.
+     * Fallback auto-scan a runtime prova entrambi + range 0x100-0x220. */
     .aactor_root_component = 0x1B0,
     .has_aactor_root_component = true,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live] */
+    /* [field offset | HYPOTHESIS | non verificato: lobby non popola posizioni]
+     * SDK dump 43.10 dice 0x140 (double), community Windows dice 0x11C (float).
+     * Fallback auto-scan a runtime prova entrambi i tipi. */
     .uscene_relative_location = 0x140,
     .uscene_relative_rotation = 0x158,
     .has_uscene_relative_location = true,
     .has_uscene_relative_rotation = true,
+    .uscene_location_is_float = false,
 
-    /* [field offset | dump SDK 2026-11-24 | non verificato live]
-     * aps_is_a_bot: il browser collassa i bitfield e stampa ogni bit come
-     * ":0", quindi il byte e' 0x27a ma la posizione del bit dentro il byte
-     * NON e' nota: va confermata a video prima di usarla come filtro. */
-    .apawn_player_state = 0x290,
+    .apawn_player_state = 0,
     .aps_team_index = 0,
-    .aps_is_a_bot = 0x27A,
-    .has_apawn_player_state = true,
+    .aps_is_a_bot = 0,
+    .has_apawn_player_state = false,
     .has_aps_team_index = false,
     .has_aps_is_a_bot = false,
 

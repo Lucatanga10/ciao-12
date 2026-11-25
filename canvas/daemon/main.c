@@ -295,32 +295,35 @@ static int run_live(const cli_options *options, const ue_offsets *off)
 {
     chain_ctx ctx;
     ipc_link link;
+    ue_offsets mutable_off;
     chain_actor actors[OJBS_MAX_ACTORS];
     esp_box boxes[OJBS_MAX_BOXES];
     uint8_t frame[OJBS_MAX_FRAME];
     const char *module_name;
     const long budget = 1000000000L / options->fps;
-    bool core_ready;
+    bool camera_ready;
+    bool walk_ready;
+    bool position_locked;
     bool self_filter_ready;
+    int scan_cooldown;
     char missing[512];
     pid_t pid;
 
+    memcpy(&mutable_off, off, sizeof(mutable_off));
     memset(&ctx, 0, sizeof(ctx));
-    ctx.off = off;
+    ctx.off = &mutable_off;
 
-    module_name = (options->module != NULL) ? options->module : off->module_name;
+    module_name = (options->module != NULL) ? options->module : mutable_off.module_name;
 
-    core_ready = offsets_feature_ready(off, FEAT_ACTOR_WALK, missing, sizeof(missing));
-    if (core_ready) {
-        core_ready = offsets_feature_ready(off, FEAT_ACTOR_POSITION,
-                                           missing, sizeof(missing));
-    }
-    if (core_ready) {
-        core_ready = offsets_feature_ready(off, FEAT_LOCAL_CAMERA,
-                                           missing, sizeof(missing));
-    }
-
-    self_filter_ready = offsets_feature_ready(off, FEAT_SELF_FILTER, NULL, 0);
+    walk_ready = offsets_feature_ready(&mutable_off, FEAT_ACTOR_WALK,
+                                       missing, sizeof(missing));
+    camera_ready = walk_ready &&
+                   offsets_feature_ready(&mutable_off, FEAT_LOCAL_CAMERA,
+                                         missing, sizeof(missing));
+    position_locked = false;
+    self_filter_ready = offsets_feature_ready(&mutable_off, FEAT_SELF_FILTER,
+                                              NULL, 0);
+    scan_cooldown = 0;
 
     ipc_init(&link);
     if (!wait_for_link(&link, options->socket_name)) {
@@ -328,9 +331,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         return 0;
     }
 
-    if (!core_ready) {
-        /* Niente offset, niente box: il link resta su e lo dice una volta,
-         * cosi' l'HUD dell'APK mostra che la metteria funziona. */
+    if (!walk_ready || !camera_ready) {
         fprintf(stderr, "[gate] nessun box: mancano %s\n", missing);
         fprintf(stderr, "[gate] mando frame vuoti; --demo per provare il disegno\n");
 
@@ -382,6 +383,30 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             chain_local_controller(&ctx, world, &controller) &&
             chain_read_camera(&ctx, controller, &camera)) {
 
+            if (!position_locked && scan_cooldown <= 0) {
+                uint32_t rc_off = 0;
+                uint32_t loc_off = 0;
+                bool is_float = false;
+
+                if (chain_autoscan_position(&ctx, world,
+                                            &rc_off, &loc_off, &is_float)) {
+                    mutable_off.aactor_root_component = rc_off;
+                    mutable_off.has_aactor_root_component = true;
+                    mutable_off.uscene_relative_location = loc_off;
+                    mutable_off.has_uscene_relative_location = true;
+                    mutable_off.uscene_location_is_float = is_float;
+                    position_locked = true;
+                    fprintf(stderr,
+                            "[scan] posizione trovata: rc=+0x%x loc=+0x%x %s\n",
+                            rc_off, loc_off, is_float ? "float" : "double");
+                } else {
+                    scan_cooldown = options->fps;
+                }
+            }
+            if (scan_cooldown > 0) {
+                scan_cooldown -= 1;
+            }
+
             if (self_filter_ready) {
                 chain_local_pawn(&ctx, controller, &self_pawn);
             }
@@ -408,7 +433,6 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             }
         }
 
-        /* Il processo puo' uscire sotto di noi: se il modulo sparisce, basta. */
         if (kill(pid, 0) != 0 && errno == ESRCH) {
             fprintf(stderr, "[proc] il target e' uscito\n");
             break;
