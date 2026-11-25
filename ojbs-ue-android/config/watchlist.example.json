@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "note": "Every hop is a property NAME, resolved through the engine's own reflection data at run time. No numeric offset appears in this file. Copy to config/watchlist.json and edit.",
+  "roots": {
+    "gworld": "the UWorld* found by `ojbs derive`",
+    "class:<Package.Class>": "first live, non-CDO instance of that class in GObjects"
+  },
+  "path_forms": {
+    "Property": "follow a property by name on the current struct",
+    "Property[i]": "index a TArray property; validated as {Data,Num,Max} before use",
+    "*": "dereference the current pointer without advancing a property"
+  },
+  "entries": [
+    {
+      "name": "local_controller",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController"],
+      "type": "ptr"
+    },
+    {
+      "name": "local_pawn",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "AcknowledgedPawn"],
+      "type": "ptr"
+    },
+    {
+      "name": "local_pawn_location",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "AcknowledgedPawn", "RootComponent", "RelativeLocation"],
+      "type": "vec3"
+    },
+    {
+      "name": "local_health",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "AcknowledgedPawn", "Health"],
+      "type": "f32"
+    },
+    {
+      "name": "camera_pov_location",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "PlayerCameraManager", "CameraCachePrivate", "POV", "Location"],
+      "type": "vec3"
+    },
+    {
+      "name": "camera_pov_rotation",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "PlayerCameraManager", "CameraCachePrivate", "POV", "Rotation"],
+      "type": "vec3"
+    },
+    {
+      "name": "camera_pov_fov",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "PlayerCameraManager", "CameraCachePrivate", "POV", "FOV"],
+      "type": "f32"
+    },
+    {
+      "name": "persistent_level",
+      "root": "gworld",
+      "path": ["PersistentLevel"],
+      "type": "ptr"
+    },
+    {
+      "name": "actor_count",
+      "root": "gworld",
+      "path": ["PersistentLevel", "Actors"],
+      "type": "tarray_num"
+    },
+    {
+      "name": "mesh_component",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "AcknowledgedPawn", "Mesh"],
+      "type": "ptr"
+    },
+    {
+      "name": "mesh_component_to_world",
+      "root": "gworld",
+      "path": ["OwningGameInstance", "LocalPlayers[0]", "PlayerController", "AcknowledgedPawn", "Mesh", "ComponentToWorld"],
+      "type": "bytes:64"
+    }
+  ]
+}
