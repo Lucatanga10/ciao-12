@@ -310,6 +310,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     bool position_locked = false;
     bool levels_found = false;
     bool camera_scanned = false;
+    bool world_dumped = false;
     uint32_t levels_offset = 0;
     int scan_cooldown = 0;
     int levels_cooldown = 0;
@@ -396,6 +397,105 @@ static int run_live(const cli_options *options, const ue_offsets *off)
 
         if (chain_ok) {
             diag_tick++;
+
+            /* --- One-time world structure dump --- */
+            if (!world_dumped) {
+                uint64_t persistent_level = 0;
+                uint64_t pcm = 0;
+                uint32_t doff;
+
+                mem_read_ptr(&ctx.target,
+                             world + mutable_off.uworld_persistent_level,
+                             &persistent_level);
+                fprintf(stderr,
+                        "[dump] world=0x%llx persistent_level=0x%llx\n",
+                        (unsigned long long)world,
+                        (unsigned long long)persistent_level);
+
+                fprintf(stderr, "[dump] --- TArray scan world+0x0..0x500 ---\n");
+                for (doff = 0x0; doff <= 0x500; doff += 8) {
+                    uint64_t d_data = 0;
+                    int32_t d_num = 0, d_max = 0;
+                    int d_check, d_valid, d_i;
+                    bool d_has_pl;
+
+                    if (!mem_read_ptr(&ctx.target, world + doff, &d_data)) {
+                        continue;
+                    }
+                    if (!mem_read_i32(&ctx.target, world + doff + 8, &d_num)) {
+                        continue;
+                    }
+                    if (!mem_read_i32(&ctx.target, world + doff + 12, &d_max)) {
+                        continue;
+                    }
+                    if (d_num <= 0 || d_num > 50000 || d_max < d_num
+                        || d_max > 100000) {
+                        continue;
+                    }
+
+                    d_check = d_num < 30 ? d_num : 30;
+                    d_valid = 0;
+                    d_has_pl = false;
+                    for (d_i = 0; d_i < d_check; ++d_i) {
+                        uint64_t elem = 0;
+                        if (!mem_read_ptr(&ctx.target,
+                                          d_data + (uint64_t)d_i * 8,
+                                          &elem)) {
+                            continue;
+                        }
+                        if (elem == persistent_level) {
+                            d_has_pl = true;
+                        }
+                        if (mem_looks_like_uobject(&ctx.target, elem)) {
+                            d_valid++;
+                        }
+                    }
+
+                    fprintf(stderr,
+                            "[dump] +0x%03x: data=0x%llx num=%d max=%d "
+                            "uobj=%d/%d%s\n",
+                            doff, (unsigned long long)d_data,
+                            d_num, d_max, d_valid, d_check,
+                            d_has_pl ? " <-- HAS PL" : "");
+                }
+
+                mem_read_ptr(&ctx.target,
+                             controller + mutable_off.apc_player_camera_manager,
+                             &pcm);
+                fprintf(stderr,
+                        "[dump] --- PCM=0x%llx non-zero doubles ---\n",
+                        (unsigned long long)pcm);
+                if (pcm != 0) {
+                    for (doff = 0x100; doff <= 0x2000; doff += 0x40) {
+                        double dvals[3];
+                        double dmag;
+                        vec3 dv;
+                        if (!mem_read(&ctx.target, pcm + doff,
+                                      dvals, sizeof(dvals))) {
+                            continue;
+                        }
+                        dv = vec3_make(dvals[0], dvals[1], dvals[2]);
+                        if (!vec3_finite(dv)) {
+                            continue;
+                        }
+                        if (dvals[0] == 0.0 && dvals[1] == 0.0
+                            && dvals[2] == 0.0) {
+                            continue;
+                        }
+                        dmag = vec3_length(dv);
+                        if (dmag < 1.0 || dmag > 1e15) {
+                            continue;
+                        }
+                        fprintf(stderr,
+                                "[dump] PCM+0x%04x: (%.1f, %.1f, %.1f) "
+                                "mag=%.0f\n",
+                                doff, dvals[0], dvals[1], dvals[2], dmag);
+                    }
+                }
+
+                fprintf(stderr, "[dump] --- fine ---\n");
+                world_dumped = true;
+            }
 
             /* --- Scan 1: UWorld::Levels TArray --- */
             if (!levels_found && levels_cooldown <= 0) {

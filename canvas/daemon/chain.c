@@ -648,7 +648,7 @@ bool chain_scan_levels_offset(const chain_ctx *ctx, uint64_t world,
         return false;
     }
 
-    for (off = 0x28; off <= 0x300; off += 8) {
+    for (off = 0x28; off <= 0x500; off += 8) {
         uint64_t data = 0;
         int32_t count = 0;
         int to_check;
@@ -657,7 +657,7 @@ bool chain_scan_levels_offset(const chain_ctx *ctx, uint64_t world,
         if (!chain_read_tarray(ctx, world + off, &data, &count)) {
             continue;
         }
-        if (count < 1 || count > 200) {
+        if (count < 1 || count > 500) {
             continue;
         }
 
