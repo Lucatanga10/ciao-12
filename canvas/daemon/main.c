@@ -1132,30 +1132,30 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                 }
 
-                /* --- Scan E: match actors position scan --- */
+                /* --- Scan E: deep RC double map --- */
                 fprintf(stderr,
-                        "[dump] --- match actor pos scan "
+                        "[dump] --- deep RC probe "
                         "(w+0x2f0 -> +0x140) ---\n");
                 {
                     uint64_t ml_obj = 0;
                     mem_read_ptr(&ctx.target, world + 0x2f0, &ml_obj);
-                    fprintf(stderr, "[dump] ML=0x%llx\n",
-                            (unsigned long long)ml_obj);
                     if (ml_obj != 0) {
                         uint64_t ma_data = 0;
                         int32_t ma_num = 0;
                         chain_read_tarray(&ctx, ml_obj + 0x140,
                                           &ma_data, &ma_num);
                         fprintf(stderr,
-                                "[dump] MA: data=0x%llx num=%d\n",
-                                (unsigned long long)ma_data, ma_num);
+                                "[dump] ML=0x%llx MA num=%d\n",
+                                (unsigned long long)ml_obj, ma_num);
+                        int rc_found = 0;
                         int mi2;
-                        int ma_lim = ma_num < 30 ? ma_num : 30;
-                        for (mi2 = 0; mi2 < ma_lim; ++mi2) {
+                        int ma_lim = ma_num < 60 ? ma_num : 60;
+                        for (mi2 = 0; mi2 < ma_lim
+                             && rc_found < 5; ++mi2) {
                             uint64_t actor = 0;
                             if (!mem_read_ptr(&ctx.target,
-                                              ma_data + (uint64_t)mi2 * 8,
-                                              &actor)) {
+                                    ma_data + (uint64_t)mi2 * 8,
+                                    &actor)) {
                                 continue;
                             }
                             if (actor == 0) continue;
@@ -1163,155 +1163,217 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                                         actor)) {
                                 continue;
                             }
-                            /* bulk read actor 0x600 bytes */
-                            uint8_t ab[0x600];
+                            /* read actor to find RC ptrs */
+                            uint8_t ab[0x300];
                             if (!mem_read(&ctx.target, actor,
                                           ab, sizeof(ab))) {
                                 continue;
                             }
-                            /* scan for float position directly
-                               in the actor (some actors store
-                               replicated position) */
-                            int ahit = 0;
-                            int ai2;
-                            for (ai2 = 0x80; ai2 + 12 <= 0x600
-                                 && ahit < 2; ai2 += 4) {
-                                float fx, fy, fz;
-                                memcpy(&fx, ab + ai2, 4);
-                                memcpy(&fy, ab + ai2 + 4, 4);
-                                memcpy(&fz, ab + ai2 + 8, 4);
-                                if (!isfinite(fx) || !isfinite(fy)
-                                    || !isfinite(fz)) {
-                                    continue;
-                                }
-                                int nz = (fx != 0.0f) + (fy != 0.0f)
-                                       + (fz != 0.0f);
-                                if (nz < 2) continue;
-                                double mag = sqrt((double)fx*fx
-                                                + (double)fy*fy
-                                                + (double)fz*fz);
-                                if (mag > 1000.0 && mag < 1e7) {
-                                    fprintf(stderr,
-                                            "[dump] MA[%d]+0x%03x flt "
-                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
-                                            mi2, ai2,
-                                            fx, fy, fz, mag);
-                                    ahit++;
-                                }
-                            }
-                            /* scan for double position */
-                            for (ai2 = 0x80; ai2 + 24 <= 0x600
-                                 && ahit < 4; ai2 += 8) {
-                                double dx, dy, dz;
-                                memcpy(&dx, ab + ai2, 8);
-                                memcpy(&dy, ab + ai2 + 8, 8);
-                                memcpy(&dz, ab + ai2 + 16, 8);
-                                if (!isfinite(dx) || !isfinite(dy)
-                                    || !isfinite(dz)) {
-                                    continue;
-                                }
-                                int nz = (dx != 0.0) + (dy != 0.0)
-                                       + (dz != 0.0);
-                                if (nz < 2) continue;
-                                double mag = sqrt(dx*dx + dy*dy
-                                                + dz*dz);
-                                if (mag > 1000.0 && mag < 1e7) {
-                                    fprintf(stderr,
-                                            "[dump] MA[%d]+0x%03x dbl "
-                                            "(%.1f,%.1f,%.1f) m=%.0f\n",
-                                            mi2, ai2,
-                                            dx, dy, dz, mag);
-                                    ahit++;
-                                }
-                            }
-                            /* also check RootComponent chain */
+                            /* find first UObject ptr in
+                               +0x100..+0x280 = RC candidate */
                             uint32_t roff;
-                            for (roff = 0x100; roff <= 0x500
-                                 && ahit < 6; roff += 8) {
-                                uint64_t rc = 0;
-                                memcpy(&rc, ab + roff, 8);
-                                if (rc == 0) continue;
-                                if (!mem_ptr_plausible(rc)) continue;
+                            uint64_t rc = 0;
+                            for (roff = 0x100; roff <= 0x280;
+                                 roff += 8) {
+                                uint64_t cand = 0;
+                                memcpy(&cand, ab + roff, 8);
+                                if (cand == 0) continue;
+                                if (!mem_ptr_plausible(cand)) continue;
                                 if (!mem_looks_like_uobject(
-                                         &ctx.target, rc)) {
+                                         &ctx.target, cand)) {
                                     continue;
                                 }
-                                /* try doubles at multiple offsets */
-                                uint32_t poff;
-                                for (poff = 0x100; poff <= 0x300;
-                                     poff += 0x20) {
-                                    double rp[3] = {0};
-                                    if (!mem_read(&ctx.target,
-                                                  rc + poff,
-                                                  rp, 24)) {
-                                        continue;
-                                    }
-                                    double rmag = sqrt(
-                                        rp[0]*rp[0] + rp[1]*rp[1]
-                                        + rp[2]*rp[2]);
-                                    if (rmag > 1000.0 && rmag < 1e7
-                                        && isfinite(rp[0])
-                                        && isfinite(rp[1])
-                                        && isfinite(rp[2])
-                                        && ((rp[0] != 0.0)
-                                            + (rp[1] != 0.0)
-                                            + (rp[2] != 0.0)) >= 2) {
+                                rc = cand;
+                                break;
+                            }
+                            if (rc == 0) continue;
+                            rc_found++;
+                            fprintf(stderr,
+                                    "[dump] MA[%d]=0x%llx "
+                                    "RC+0x%03x=0x%llx\n",
+                                    mi2,
+                                    (unsigned long long)actor,
+                                    roff,
+                                    (unsigned long long)rc);
+                            /* read full RC 0x600 bytes */
+                            uint8_t rb[0x600];
+                            if (!mem_read(&ctx.target, rc,
+                                          rb, sizeof(rb))) {
+                                fprintf(stderr,
+                                        "[dump]  RC read fail\n");
+                                continue;
+                            }
+                            /* dump INDIVIDUAL doubles
+                               |val| 50..500000 */
+                            int dhit = 0;
+                            uint32_t di;
+                            for (di = 0x28; di + 8 <= 0x600
+                                 && dhit < 20; di += 8) {
+                                double dv;
+                                memcpy(&dv, rb + di, 8);
+                                if (!isfinite(dv)) continue;
+                                double av = dv < 0 ? -dv : dv;
+                                if (av >= 50.0 && av <= 500000.0) {
+                                    fprintf(stderr,
+                                            "[dump]  RC+0x%03x "
+                                            "d=%.2f\n",
+                                            di, dv);
+                                    dhit++;
+                                }
+                            }
+                            /* dump INDIVIDUAL floats
+                               |val| 50..500000 */
+                            int fhit = 0;
+                            for (di = 0x28; di + 4 <= 0x600
+                                 && fhit < 20; di += 4) {
+                                float fv;
+                                memcpy(&fv, rb + di, 4);
+                                if (!isfinite(fv)) continue;
+                                double av = fv < 0 ? -fv : fv;
+                                if (av >= 50.0 && av <= 500000.0) {
+                                    fprintf(stderr,
+                                            "[dump]  RC+0x%03x "
+                                            "f=%.2f\n",
+                                            di, fv);
+                                    fhit++;
+                                }
+                            }
+                            if (dhit == 0 && fhit == 0) {
+                                fprintf(stderr,
+                                        "[dump]  no coords\n");
+                            }
+                            /* also dump actor itself
+                               for individual doubles */
+                            uint8_t abig[0xC00];
+                            if (mem_read(&ctx.target, actor,
+                                         abig, sizeof(abig))) {
+                                int ahit = 0;
+                                for (di = 0x80; di + 8 <= 0xC00
+                                     && ahit < 10; di += 8) {
+                                    double dv;
+                                    memcpy(&dv, abig + di, 8);
+                                    if (!isfinite(dv)) continue;
+                                    double av = dv < 0 ? -dv : dv;
+                                    if (av >= 500.0
+                                        && av <= 500000.0) {
                                         fprintf(stderr,
-                                            "[dump] MA[%d]+0x%03x"
-                                            "->RC+0x%03x dbl "
-                                            "(%.1f,%.1f,%.1f) "
-                                            "m=%.0f\n",
-                                            mi2, roff, poff,
-                                            rp[0], rp[1], rp[2],
-                                            rmag);
+                                            "[dump]  ACT+0x%03x "
+                                            "d=%.2f\n",
+                                            di, dv);
                                         ahit++;
-                                        break;
                                     }
                                 }
-                                /* try floats too */
-                                if (ahit == 0) {
-                                    for (poff = 0x100; poff <= 0x300;
-                                         poff += 0x10) {
-                                        float fp[3] = {0};
-                                        if (!mem_read(&ctx.target,
-                                                      rc + poff,
-                                                      fp, 12)) {
-                                            continue;
+                            }
+                        }
+                        if (rc_found == 0) {
+                            fprintf(stderr,
+                                    "[dump] no RC found in "
+                                    "first %d actors\n", ma_lim);
+                        }
+                    }
+                }
+
+                /* --- Scan E2: LocalPlayer chain
+                       for ViewProjectionMatrix --- */
+                fprintf(stderr,
+                        "[dump] --- LP ViewProjection scan ---\n");
+                {
+                    uint64_t gi2 = 0;
+                    uint64_t lp_arr = 0;
+                    uint64_t lp = 0;
+                    mem_read_ptr(&ctx.target,
+                        world + mutable_off.uworld_owning_game_instance,
+                        &gi2);
+                    if (gi2 != 0) {
+                        mem_read_ptr(&ctx.target,
+                            gi2 + mutable_off.ugameinstance_local_players,
+                            &lp_arr);
+                    }
+                    if (lp_arr != 0) {
+                        mem_read_ptr(&ctx.target, lp_arr, &lp);
+                    }
+                    fprintf(stderr, "[dump] LP=0x%llx\n",
+                            (unsigned long long)lp);
+                    if (lp != 0) {
+                        /* scan LP for UObject ptrs
+                           (ViewportClient) */
+                        uint8_t lpb[0x300];
+                        if (mem_read(&ctx.target, lp,
+                                     lpb, sizeof(lpb))) {
+                            fprintf(stderr,
+                                    "[dump] LP UObj ptrs:\n");
+                            uint32_t li;
+                            for (li = 0x28; li + 8 <= 0x300;
+                                 li += 8) {
+                                uint64_t vp = 0;
+                                memcpy(&vp, lpb + li, 8);
+                                if (vp == 0) continue;
+                                if (!mem_ptr_plausible(vp)) continue;
+                                if (!mem_looks_like_uobject(
+                                         &ctx.target, vp)) {
+                                    continue;
+                                }
+                                fprintf(stderr,
+                                        "[dump]  LP+0x%03x"
+                                        "=0x%llx",
+                                        li,
+                                        (unsigned long long)vp);
+                                /* check if this obj has a
+                                   4x4 float matrix anywhere
+                                   (16 floats, det != 0) */
+                                uint8_t vb[0x800];
+                                if (mem_read(&ctx.target, vp,
+                                             vb, sizeof(vb))) {
+                                    uint32_t mi3;
+                                    for (mi3 = 0x40;
+                                         mi3 + 64 <= 0x800;
+                                         mi3 += 0x10) {
+                                        float m[16];
+                                        memcpy(m, vb + mi3, 64);
+                                        bool ok = true;
+                                        int mj;
+                                        int nzm = 0;
+                                        for (mj = 0; mj < 16;
+                                             ++mj) {
+                                            if (!isfinite(m[mj])) {
+                                                ok = false;
+                                                break;
+                                            }
+                                            if (m[mj] != 0.0f)
+                                                nzm++;
                                         }
-                                        double fmag = sqrt(
-                                            (double)fp[0]*fp[0]
-                                            + (double)fp[1]*fp[1]
-                                            + (double)fp[2]*fp[2]);
-                                        if (fmag > 1000.0
-                                            && fmag < 1e7
-                                            && isfinite(fp[0])
-                                            && isfinite(fp[1])
-                                            && isfinite(fp[2])
-                                            && ((fp[0] != 0.0f)
-                                                + (fp[1] != 0.0f)
-                                                + (fp[2] != 0.0f))
-                                               >= 2) {
+                                        if (!ok || nzm < 6) continue;
+                                        /* check if looks like
+                                           view matrix:
+                                           row magnitudes ~1 */
+                                        double r0 = sqrt(
+                                            (double)m[0]*m[0]
+                                            + (double)m[1]*m[1]
+                                            + (double)m[2]*m[2]);
+                                        double r1 = sqrt(
+                                            (double)m[4]*m[4]
+                                            + (double)m[5]*m[5]
+                                            + (double)m[6]*m[6]);
+                                        if (r0 > 0.1 && r0 < 10.0
+                                            && r1 > 0.1
+                                            && r1 < 10.0) {
                                             fprintf(stderr,
-                                                "[dump] MA[%d]"
-                                                "+0x%03x"
-                                                "->RC+0x%03x flt "
-                                                "(%.1f,%.1f,%.1f)"
-                                                " m=%.0f\n",
-                                                mi2, roff, poff,
-                                                fp[0], fp[1],
-                                                fp[2], fmag);
-                                            ahit++;
+                                                " MAT+0x%03x "
+                                                "r0=%.3f r1=%.3f "
+                                                "[%.4f %.4f %.4f "
+                                                "%.4f / %.4f %.4f "
+                                                "%.4f %.4f]",
+                                                mi3,
+                                                r0, r1,
+                                                m[0], m[1],
+                                                m[2], m[3],
+                                                m[4], m[5],
+                                                m[6], m[7]);
                                             break;
                                         }
                                     }
                                 }
-                            }
-                            if (ahit == 0 && mi2 < 5) {
-                                fprintf(stderr,
-                                        "[dump] MA[%d]=0x%llx "
-                                        "no-pos\n",
-                                        mi2,
-                                        (unsigned long long)actor);
+                                fprintf(stderr, "\n");
                             }
                         }
                     }
