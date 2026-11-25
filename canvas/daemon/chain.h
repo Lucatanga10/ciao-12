@@ -70,4 +70,14 @@ int chain_collect_actors(const chain_ctx *ctx, uint64_t world,
                          double max_distance,
                          chain_actor *out, int capacity);
 
+/*
+ * Auto-scan: prova combinazioni di RootComponent e RelativeLocation su 20
+ * attori del PersistentLevel. Torna true quando almeno 3 attori hanno
+ * posizioni diverse (distanza > 100 unita'). Scrive gli offset trovati.
+ * Funziona solo in partita: in lobby le posizioni sono tutte zero.
+ */
+bool chain_autoscan_position(const chain_ctx *ctx, uint64_t world,
+                             uint32_t *out_rc_off, uint32_t *out_loc_off,
+                             bool *out_loc_is_float);
+
 #endif /* OJBS_CHAIN_H */

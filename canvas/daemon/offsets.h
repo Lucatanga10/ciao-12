@@ -100,6 +100,7 @@ typedef struct {
     uint32_t uscene_relative_rotation;
     bool has_uscene_relative_location;
     bool has_uscene_relative_rotation;
+    bool uscene_location_is_float;
 
     /* APawn / APlayerState  [field offset | UNKNOWN] */
     uint32_t apawn_player_state;
