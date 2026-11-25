@@ -145,16 +145,19 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
 
 bool chain_find_guobjectarray(const chain_ctx *ctx,
                               uint64_t gworld_rva,
-                              uint64_t *out_objects_addr);
+                              uint64_t *out_objects_addr,
+                              int *out_item_size);
 
 bool chain_resolve_fobjectptr(const chain_ctx *ctx,
                               uint64_t guobj_objects,
+                              int guobj_item_size,
                               uint64_t handle,
                               uint64_t *out_ptr);
 
 int chain_collect_via_guobj(const chain_ctx *ctx,
                             uint64_t world,
                             uint64_t guobj_objects,
+                            int guobj_item_size,
                             uint32_t rc_off,
                             uint32_t loc_off,
                             bool loc_float,

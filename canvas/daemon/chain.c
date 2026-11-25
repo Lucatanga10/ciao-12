@@ -323,8 +323,6 @@ int chain_collect_actors(const chain_ctx *ctx, uint64_t world,
 
     memset(pointers, 0, sizeof(pointers));
 
-    /* Un solo process_vm_readv per tutto l'array: 512 letture separate a
-     * frame non stanno nel budget. */
     if (!mem_read(&ctx->target, actors_data, pointers,
                   (size_t)to_read * sizeof(uint64_t))) {
         return 0;
@@ -335,6 +333,7 @@ int chain_collect_actors(const chain_ctx *ctx, uint64_t world,
         vec3 position;
         vec3 delta;
         double distance;
+        uint32_t lo, hi;
 
         if (actor == 0 || actor == skip_actor) {
             continue;
@@ -342,8 +341,38 @@ int chain_collect_actors(const chain_ctx *ctx, uint64_t world,
         if (!mem_ptr_plausible(actor)) {
             continue;
         }
-        if (!chain_actor_position(ctx, actor, &position)) {
+
+        lo = (uint32_t)(actor & 0xFFFFFFFF);
+        hi = (uint32_t)(actor >> 32);
+        if (lo == hi && lo < 1000000) {
             continue;
+        }
+
+        if (!chain_actor_position(ctx, actor, &position)) {
+            uint64_t rc_alt = 0;
+            uint32_t alt_off = (ctx->off->aactor_root_component
+                                == 0x100) ? 0x1B0 : 0x100;
+            if (!mem_read_ptr(&ctx->target,
+                              actor + alt_off, &rc_alt) ||
+                rc_alt == 0)
+                continue;
+            if (ctx->off->uscene_location_is_float) {
+                float raw[3];
+                if (!mem_read(&ctx->target,
+                    rc_alt + ctx->off->uscene_relative_location,
+                    raw, sizeof(raw)))
+                    continue;
+                position = vec3_make(
+                    (double)raw[0], (double)raw[1],
+                    (double)raw[2]);
+                if (!vec3_plausible(position, OJBS_WORLD_LIMIT))
+                    continue;
+            } else {
+                if (!chain_read_vector(ctx,
+                    rc_alt + ctx->off->uscene_relative_location,
+                    &position))
+                    continue;
+            }
         }
 
         delta = vec3_sub(position, camera_position);
@@ -1011,6 +1040,7 @@ bool chain_find_ftransform_in_rc(const chain_ctx *ctx, uint64_t rc_addr,
 
 bool chain_resolve_fobjectptr(const chain_ctx *ctx,
                               uint64_t guobj_objects,
+                              int guobj_item_size,
                               uint64_t handle,
                               uint64_t *out_ptr)
 {
@@ -1020,6 +1050,8 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
     uint64_t chunk_ptr;
     uint64_t item_addr;
     uint64_t obj;
+    int isz = guobj_item_size > 0 ? guobj_item_size
+                                  : GUOBJ_ITEM_SIZE;
 
     if (out_ptr == NULL) return false;
     *out_ptr = 0;
@@ -1042,7 +1074,7 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
     }
 
     item_addr = chunk_ptr
-        + (uint64_t)within_chunk * GUOBJ_ITEM_SIZE;
+        + (uint64_t)within_chunk * (uint64_t)isz;
 
     if (!mem_read_ptr(&ctx->target, item_addr, &obj)) {
         return false;
@@ -1055,46 +1087,109 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
     return true;
 }
 
-static bool guobj_deep_check(const chain_ctx *ctx,
-                             uint64_t objects_ptr)
+static int guobj_deep_check(const chain_ctx *ctx,
+                            uint64_t objects_ptr,
+                            uint64_t rva)
 {
-    uint64_t chunk0, item0, item5;
+    uint64_t chunk0, item0;
+    static const int sizes[] = {24, 16, 20, 32};
+    int s;
 
-    if (!mem_read_ptr(&ctx->target, objects_ptr, &chunk0))
-        return false;
-    if (chunk0 == 0 || !mem_ptr_plausible(chunk0))
-        return false;
-    if (!mem_read_ptr(&ctx->target, chunk0, &item0))
-        return false;
-    if (item0 == 0 || !mem_ptr_plausible(item0))
-        return false;
-    if (!mem_looks_like_uobject(&ctx->target, item0))
-        return false;
-    item5 = 0;
-    if (!mem_read_ptr(&ctx->target,
-                      chunk0 + 5 * GUOBJ_ITEM_SIZE, &item5))
-        return false;
-    return item5 != 0
-        && mem_looks_like_uobject(&ctx->target, item5);
+    if (!mem_read_ptr(&ctx->target, objects_ptr, &chunk0)) {
+        fprintf(stderr,
+            "[guobj] deep rva=0x%llx: chunk0 read fail\n",
+            (unsigned long long)rva);
+        return 0;
+    }
+    if (chunk0 == 0 || !mem_ptr_plausible(chunk0)) {
+        fprintf(stderr,
+            "[guobj] deep rva=0x%llx: chunk0=0x%llx bad\n",
+            (unsigned long long)rva,
+            (unsigned long long)chunk0);
+        return 0;
+    }
+    if (!mem_read_ptr(&ctx->target, chunk0, &item0)) {
+        fprintf(stderr,
+            "[guobj] deep rva=0x%llx: item0 read fail "
+            "ch0=0x%llx\n",
+            (unsigned long long)rva,
+            (unsigned long long)chunk0);
+        return 0;
+    }
+    if (item0 == 0 || !mem_ptr_plausible(item0)) {
+        fprintf(stderr,
+            "[guobj] deep rva=0x%llx: item0=0x%llx bad "
+            "ch0=0x%llx\n",
+            (unsigned long long)rva,
+            (unsigned long long)item0,
+            (unsigned long long)chunk0);
+        return 0;
+    }
+    if (!mem_looks_like_uobject(&ctx->target, item0)) {
+        fprintf(stderr,
+            "[guobj] deep rva=0x%llx: item0=0x%llx "
+            "not UObject ch0=0x%llx\n",
+            (unsigned long long)rva,
+            (unsigned long long)item0,
+            (unsigned long long)chunk0);
+        return 0;
+    }
+
+    for (s = 0; s < 4; s++) {
+        uint64_t item5 = 0;
+        uint64_t item10 = 0;
+        mem_read_ptr(&ctx->target,
+                     chunk0 + 5 * (uint64_t)sizes[s],
+                     &item5);
+        if (item5 == 0 || !mem_looks_like_uobject(
+                              &ctx->target, item5))
+            continue;
+        mem_read_ptr(&ctx->target,
+                     chunk0 + 10 * (uint64_t)sizes[s],
+                     &item10);
+        if (item10 != 0 && mem_looks_like_uobject(
+                               &ctx->target, item10)) {
+            fprintf(stderr,
+                "[guobj] DEEP OK rva=0x%llx item_sz=%d "
+                "ch0=0x%llx it0=0x%llx it5=0x%llx "
+                "it10=0x%llx\n",
+                (unsigned long long)rva, sizes[s],
+                (unsigned long long)chunk0,
+                (unsigned long long)item0,
+                (unsigned long long)item5,
+                (unsigned long long)item10);
+            return sizes[s];
+        }
+    }
+
+    fprintf(stderr,
+        "[guobj] deep rva=0x%llx: item0=0x%llx OK "
+        "but no item_sz matched ch0=0x%llx\n",
+        (unsigned long long)rva,
+        (unsigned long long)item0,
+        (unsigned long long)chunk0);
+    return 0;
 }
 
 bool chain_find_guobjectarray(const chain_ctx *ctx,
                               uint64_t gworld_rva,
-                              uint64_t *out_objects_addr)
+                              uint64_t *out_objects_addr,
+                              int *out_item_size)
 {
     uint64_t base = ctx->target.module_base;
     uint64_t mod_end = ctx->target.module_end;
-    uint64_t mod_size = mod_end - base;
     uint64_t scan_start, scan_end, page_addr;
     uint8_t page[4096];
     int cand_a = 0, cand_b = 0;
+    int found_item_sz = 0;
 
     (void)gworld_rva;
 
     if (out_objects_addr == NULL) return false;
     *out_objects_addr = 0;
+    if (out_item_size != NULL) *out_item_size = 0;
 
-    scan_start = base + (mod_size / 2);
+    scan_start = base;
     scan_start &= ~(uint64_t)4095;
     scan_end = mod_end;
 
@@ -1132,14 +1227,18 @@ bool chain_find_guobjectarray(const chain_ctx *ctx,
                 (int32_t)((uint32_t)v[3] * GUOBJ_CHUNK_SIZE) >=
                     v[1] - (int32_t)GUOBJ_CHUNK_SIZE) {
                 cand_a++;
-                if (guobj_deep_check(ctx, objects_ptr)) {
+                found_item_sz = guobj_deep_check(ctx,
+                    objects_ptr, page_addr + off - base);
+                if (found_item_sz > 0) {
                     *out_objects_addr = objects_ptr;
+                    if (out_item_size)
+                        *out_item_size = found_item_sz;
                     fprintf(stderr,
                         "[guobj] FOUND A rva=0x%llx obj=0x%llx "
-                        "max=%d num=%d ch=%d\n",
+                        "max=%d num=%d ch=%d isz=%d\n",
                         (unsigned long long)(page_addr+off-base),
                         (unsigned long long)objects_ptr,
-                        v[0], v[1], v[3]);
+                        v[0], v[1], v[3], found_item_sz);
                     return true;
                 }
             }
@@ -1155,15 +1254,22 @@ bool chain_find_guobjectarray(const chain_ctx *ctx,
                     (int32_t)((uint32_t)v[3] * GUOBJ_CHUNK_SIZE)
                         >= v[1] - (int32_t)GUOBJ_CHUNK_SIZE) {
                     cand_b++;
-                    if (guobj_deep_check(ctx, objects_ptr)) {
+                    found_item_sz = guobj_deep_check(ctx,
+                        objects_ptr,
+                        page_addr + off - base);
+                    if (found_item_sz > 0) {
                         *out_objects_addr = objects_ptr;
+                        if (out_item_size)
+                            *out_item_size = found_item_sz;
                         fprintf(stderr,
                             "[guobj] FOUND B rva=0x%llx "
-                            "obj=0x%llx max=%d num=%d ch=%d\n",
+                            "obj=0x%llx max=%d num=%d "
+                            "ch=%d isz=%d\n",
                             (unsigned long long)(page_addr+off
                                                  - base),
                             (unsigned long long)objects_ptr,
-                            v[0], v[1], v[3]);
+                            v[0], v[1], v[3],
+                            found_item_sz);
                         return true;
                     }
                 }
@@ -1181,6 +1287,7 @@ bool chain_find_guobjectarray(const chain_ctx *ctx,
 int chain_collect_via_guobj(const chain_ctx *ctx,
                             uint64_t world,
                             uint64_t guobj_objects,
+                            int guobj_item_size,
                             uint32_t rc_off,
                             uint32_t loc_off,
                             bool loc_float,
@@ -1226,6 +1333,7 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
             if (lo < 50 || lo > 500000) continue;
 
             if (!chain_resolve_fobjectptr(ctx, guobj_objects,
+                                          guobj_item_size,
                                           handle, &pawn)) {
                 continue;
             }

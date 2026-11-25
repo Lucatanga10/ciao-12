@@ -326,6 +326,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     bool ftransform_is_float = false;
 
     uint64_t guobj_objects = 0;
+    int guobj_item_size = 0;
     bool guobj_found = false;
     uint64_t real_pawn = 0;
     uint32_t pawn_rc_off = 0;
@@ -485,19 +486,27 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                 }
             }
-            /* try PC+0x488 as yaw (float, possibly radians) */
+        }
+
+        /* camera yaw fallback: PC+0x320 confirmed as yaw float */
+        if (chain_ok &&
+            camera.rotation.yaw == 0.0 &&
+            camera.rotation.pitch == 0.0) {
+            float yaw_f = 0;
+            if (mem_read_f32(&ctx.target,
+                             controller + 0x320, &yaw_f)) {
+                if (isfinite(yaw_f) && yaw_f != 0.0f &&
+                    yaw_f > -360.0f && yaw_f < 360.0f) {
+                    camera.rotation.yaw = (double)yaw_f;
+                }
+            }
             {
-                float yaw_f = 0;
+                float pitch_f = 0;
                 if (mem_read_f32(&ctx.target,
-                                 controller + 0x488, &yaw_f)) {
-                    if (isfinite(yaw_f) && yaw_f != 0.0f) {
-                        if (yaw_f > -6.3f && yaw_f < 6.3f) {
-                            camera.rotation.yaw = (double)yaw_f
-                                * (180.0 / 3.14159265358979);
-                        } else if (yaw_f > -360.0f
-                                   && yaw_f < 360.0f) {
-                            camera.rotation.yaw = (double)yaw_f;
-                        }
+                                 controller + 0x324, &pitch_f)) {
+                    if (isfinite(pitch_f) &&
+                        pitch_f > -90.0f && pitch_f < 90.0f) {
+                        camera.rotation.pitch = (double)pitch_f;
                     }
                 }
             }
@@ -525,6 +534,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     ftransform_locked = false;
                     ftransform_trans_off = 0;
                     guobj_objects = 0;
+                    guobj_item_size = 0;
                     guobj_found = false;
                     real_pawn = 0;
                     pawn_pos_locked = false;
@@ -619,12 +629,14 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         "[dump] --- GUObjectArray scan ---\n");
                     if (chain_find_guobjectarray(&ctx,
                             mutable_off.gworld_rva,
-                            &guobj_objects)) {
+                            &guobj_objects,
+                            &guobj_item_size)) {
                         guobj_found = true;
                         fprintf(stderr,
                             "[dump] GUOBJ FOUND: Objects="
-                            "0x%llx\n",
-                            (unsigned long long)guobj_objects);
+                            "0x%llx isz=%d\n",
+                            (unsigned long long)guobj_objects,
+                            guobj_item_size);
 
                         /* resolve the pawn handle */
                         {
@@ -635,6 +647,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                 uint64_t rp = 0;
                                 if (chain_resolve_fobjectptr(
                                         &ctx, guobj_objects,
+                                        guobj_item_size,
                                         pawn_h, &rp)) {
                                     real_pawn = rp;
                                     fprintf(stderr,
@@ -2202,6 +2215,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             if (guobj_found && pawn_pos_locked) {
                 actor_count = chain_collect_via_guobj(
                     &ctx, world, guobj_objects,
+                    guobj_item_size,
                     pawn_rc_off, pawn_loc_off,
                     pawn_loc_float,
                     real_pawn, camera.position,
@@ -2262,7 +2276,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         "[diag] w=0x%llx pawn=0x%llx "
                         "cam=(%.0f,%.0f,%.0f) yaw=%.1f "
                         "fov=%.1f act=%d box=%d "
-                        "gu=%s pp=%s\n",
+                        "gu=%s(isz=%d) pp=%s\n",
                         (unsigned long long)world,
                         (unsigned long long)pawn_raw,
                         camera.position.x, camera.position.y,
@@ -2270,6 +2284,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         camera.fov,
                         actor_count, box_count,
                         guobj_found ? "si" : "no",
+                        guobj_item_size,
                         pawn_pos_locked ? "si" : "no");
                 if (actor_count > 0 && diag_count < 3) {
                     int ai;
