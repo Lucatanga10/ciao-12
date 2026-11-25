@@ -368,6 +368,10 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             (unsigned long long)ctx.target.module_base,
             (unsigned long long)(ctx.target.module_end - ctx.target.module_base));
 
+    {
+        int diag_count = 0;
+        const int diag_limit = 3;
+
     while (!g_stop) {
         const long started = now_ns();
         uint64_t world = 0;
@@ -378,10 +382,63 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         int box_count = 0;
         size_t length;
         long spent;
+        bool chain_ok = false;
 
-        if (chain_resolve_world(&ctx, &world) &&
-            chain_local_controller(&ctx, world, &controller) &&
-            chain_read_camera(&ctx, controller, &camera)) {
+        bool w_ok = chain_resolve_world(&ctx, &world);
+        if (w_ok) {
+            uint64_t gi = 0, lp_data = 0, lp = 0, pc = 0, pcm = 0;
+            int32_t lp_count = 0;
+            bool c_ok = chain_local_controller(&ctx, world, &controller);
+            if (c_ok) {
+                bool cam_ok = chain_read_camera(&ctx, controller, &camera);
+                if (cam_ok) {
+                    chain_ok = true;
+                } else if (diag_count < diag_limit) {
+                    mem_read_ptr(&ctx.target,
+                        controller + mutable_off.apc_player_camera_manager, &pcm);
+                    float fov = 0;
+                    vec3 cloc = {0};
+                    rot3 crot = {0};
+                    uint64_t pov_addr = pcm + mutable_off.apcm_camera_cache_private
+                                      + mutable_off.apcm_pov_in_cache_entry;
+                    chain_read_vector(&ctx, pov_addr + mutable_off.fmvi_location, &cloc);
+                    chain_read_rotator(&ctx, pov_addr + mutable_off.fmvi_rotation, &crot);
+                    mem_read_f32(&ctx.target, pov_addr + mutable_off.fmvi_fov, &fov);
+                    fprintf(stderr,
+                        "[diag] camera FAIL: pcm=0x%llx pov=0x%llx "
+                        "loc=(%.1f,%.1f,%.1f) rot=(%.1f,%.1f,%.1f) fov=%.2f\n",
+                        (unsigned long long)pcm, (unsigned long long)pov_addr,
+                        cloc.x, cloc.y, cloc.z,
+                        crot.pitch, crot.yaw, crot.roll, (double)fov);
+                    diag_count++;
+                }
+            } else if (diag_count < diag_limit) {
+                mem_read_ptr(&ctx.target,
+                    world + mutable_off.uworld_owning_game_instance, &gi);
+                chain_read_tarray(&ctx,
+                    gi + mutable_off.ugameinstance_local_players,
+                    &lp_data, &lp_count);
+                if (lp_count > 0) mem_read_ptr(&ctx.target, lp_data, &lp);
+                if (lp) mem_read_ptr(&ctx.target,
+                    lp + mutable_off.ulocalplayer_player_controller, &pc);
+                fprintf(stderr,
+                    "[diag] controller FAIL: w=0x%llx gi=0x%llx lp_n=%d "
+                    "lp=0x%llx pc=0x%llx\n",
+                    (unsigned long long)world, (unsigned long long)gi,
+                    lp_count, (unsigned long long)lp, (unsigned long long)pc);
+                diag_count++;
+            }
+        } else if (diag_count < diag_limit) {
+            uint64_t raw_ptr = 0;
+            uint64_t gw_addr = ctx.target.module_base + mutable_off.gworld_rva;
+            mem_read(&ctx.target, gw_addr, &raw_ptr, 8);
+            fprintf(stderr,
+                "[diag] GWorld FAIL: addr=0x%llx raw=0x%llx\n",
+                (unsigned long long)gw_addr, (unsigned long long)raw_ptr);
+            diag_count++;
+        }
+
+        if (chain_ok) {
 
             if (!position_locked && scan_cooldown <= 0) {
                 uint32_t rc_off = 0;
@@ -442,6 +499,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         sleep_ns(budget - spent);
     }
 
+    } /* diag scope */
     ipc_close(&link);
     return 0;
 }
