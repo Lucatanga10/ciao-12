@@ -1,5 +1,6 @@
 #include "chain.h"
 
+#include <math.h>
 #include <string.h>
 
 /* Il mondo di UE e' grande ma non infinito: oltre questo, la lettura e' rotta. */
@@ -531,6 +532,315 @@ bool chain_autoscan_position(const chain_ctx *ctx, uint64_t world,
                 return true;
             }
         }
+    }
+
+    return false;
+}
+
+/* ------------------------------------------------------------------ */
+/* Nuove funzioni: scan livelli, camera, raccolta multi-livello       */
+/* ------------------------------------------------------------------ */
+
+bool chain_autoscan_position_level(const chain_ctx *ctx, uint64_t level,
+                                   uint32_t *out_rc_off, uint32_t *out_loc_off,
+                                   bool *out_loc_is_float)
+{
+    uint64_t actors_data = 0;
+    int32_t actors_count = 0;
+    uint64_t actor_ptrs[SCAN_ACTORS];
+    int test_count = 0;
+    uint32_t rc_off;
+    uint32_t loc_off;
+    int step;
+    int i;
+
+    if (ctx == NULL || ctx->off == NULL) {
+        return false;
+    }
+    if (!ctx->off->has_ulevel_actors) {
+        return false;
+    }
+
+    if (!chain_read_tarray(ctx, level + ctx->off->ulevel_actors,
+                           &actors_data, &actors_count)) {
+        return false;
+    }
+    if (actors_count < 10) {
+        return false;
+    }
+
+    step = actors_count / SCAN_ACTORS;
+    if (step < 1) {
+        step = 1;
+    }
+    for (i = 3; i < actors_count && test_count < SCAN_ACTORS; i += step) {
+        uint64_t a = 0;
+        if (mem_read_ptr(&ctx->target,
+                         actors_data + (uint64_t)i * 8, &a) && a != 0) {
+            actor_ptrs[test_count++] = a;
+        }
+    }
+    if (test_count < 5) {
+        return false;
+    }
+
+    for (rc_off = SCAN_RC_MIN; rc_off <= SCAN_RC_MAX; rc_off += SCAN_RC_STEP) {
+        uint64_t components[SCAN_ACTORS];
+        int readable = 0;
+
+        memset(components, 0, sizeof(components));
+        for (i = 0; i < test_count; ++i) {
+            uint64_t comp = 0;
+            if (mem_read_ptr(&ctx->target, actor_ptrs[i] + rc_off, &comp)) {
+                components[i] = comp;
+                readable += 1;
+            }
+        }
+        if (readable < 3) {
+            continue;
+        }
+
+        for (loc_off = SCAN_LOC_MIN; loc_off <= SCAN_LOC_MAX; loc_off += 8) {
+            int pos_count = 0;
+            if (scan_try_doubles(ctx, components, test_count,
+                                 loc_off, &pos_count)) {
+                *out_rc_off = rc_off;
+                *out_loc_off = loc_off;
+                *out_loc_is_float = false;
+                return true;
+            }
+        }
+
+        for (loc_off = SCAN_LOC_MIN; loc_off <= SCAN_LOC_MAX; loc_off += 4) {
+            int pos_count = 0;
+            if (scan_try_floats(ctx, components, test_count,
+                                loc_off, &pos_count)) {
+                *out_rc_off = rc_off;
+                *out_loc_off = loc_off;
+                *out_loc_is_float = true;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool chain_scan_levels_offset(const chain_ctx *ctx, uint64_t world,
+                              uint32_t *out_levels_offset)
+{
+    uint64_t persistent_level = 0;
+    uint32_t off;
+
+    if (ctx == NULL || ctx->off == NULL || out_levels_offset == NULL) {
+        return false;
+    }
+    if (!ctx->off->has_uworld_persistent_level) {
+        return false;
+    }
+
+    if (!mem_read_ptr(&ctx->target,
+                      world + ctx->off->uworld_persistent_level,
+                      &persistent_level)) {
+        return false;
+    }
+    if (persistent_level == 0) {
+        return false;
+    }
+
+    for (off = 0x28; off <= 0x500; off += 8) {
+        uint64_t data = 0;
+        int32_t count = 0;
+        int to_check;
+        int i;
+
+        if (!chain_read_tarray(ctx, world + off, &data, &count)) {
+            continue;
+        }
+        if (count < 1 || count > 500) {
+            continue;
+        }
+
+        to_check = count < 50 ? count : 50;
+        for (i = 0; i < to_check; ++i) {
+            uint64_t lvl = 0;
+            if (!mem_read_ptr(&ctx->target, data + (uint64_t)i * 8, &lvl)) {
+                continue;
+            }
+            if (lvl == persistent_level) {
+                *out_levels_offset = off;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+int chain_collect_actors_from_level(const chain_ctx *ctx, uint64_t level,
+                                    uint64_t skip_actor, vec3 camera_position,
+                                    double max_distance,
+                                    chain_actor *out, int capacity)
+{
+    uint64_t actors_data = 0;
+    int32_t actors_count = 0;
+    uint64_t pointers[OJBS_MAX_ACTORS];
+    int to_read;
+    int found = 0;
+    int i;
+
+    if (ctx == NULL || ctx->off == NULL || out == NULL || capacity <= 0) {
+        return 0;
+    }
+    if (!ctx->off->has_ulevel_actors) {
+        return 0;
+    }
+
+    if (!chain_read_tarray(ctx, level + ctx->off->ulevel_actors,
+                           &actors_data, &actors_count)) {
+        return 0;
+    }
+    if (actors_count <= 0) {
+        return 0;
+    }
+
+    to_read = actors_count;
+    if (to_read > OJBS_MAX_ACTORS) {
+        to_read = OJBS_MAX_ACTORS;
+    }
+    if (to_read > capacity) {
+        to_read = capacity;
+    }
+
+    memset(pointers, 0, sizeof(pointers));
+
+    if (!mem_read(&ctx->target, actors_data, pointers,
+                  (size_t)to_read * sizeof(uint64_t))) {
+        return 0;
+    }
+
+    for (i = 0; i < to_read && found < capacity; ++i) {
+        uint64_t actor = pointers[i];
+        vec3 position;
+        vec3 delta;
+        double distance;
+
+        if (actor == 0 || actor == skip_actor) {
+            continue;
+        }
+        if (!mem_ptr_plausible(actor)) {
+            continue;
+        }
+        if (!chain_actor_position(ctx, actor, &position)) {
+            continue;
+        }
+
+        delta = vec3_sub(position, camera_position);
+        distance = vec3_length(delta);
+
+        if (!(distance > 0.0) || distance > max_distance) {
+            continue;
+        }
+
+        out[found].actor = actor;
+        out[found].position = position;
+        out[found].distance = distance;
+        found += 1;
+    }
+
+    return found;
+}
+
+int chain_collect_actors_all_levels(const chain_ctx *ctx, uint64_t world,
+                                    uint32_t levels_offset,
+                                    uint64_t skip_actor, vec3 camera_position,
+                                    double max_distance,
+                                    chain_actor *out, int capacity)
+{
+    uint64_t data = 0;
+    int32_t count = 0;
+    int found = 0;
+    int i;
+
+    if (ctx == NULL || ctx->off == NULL || out == NULL || capacity <= 0) {
+        return 0;
+    }
+
+    if (!chain_read_tarray(ctx, world + levels_offset, &data, &count)) {
+        return 0;
+    }
+    if (count < 1 || count > 200) {
+        return 0;
+    }
+
+    for (i = 0; i < count && found < capacity; ++i) {
+        uint64_t level = 0;
+        if (!mem_read_ptr(&ctx->target, data + (uint64_t)i * 8, &level)) {
+            continue;
+        }
+        if (!mem_looks_like_uobject(&ctx->target, level)) {
+            continue;
+        }
+
+        found += chain_collect_actors_from_level(ctx, level,
+                     skip_actor, camera_position, max_distance,
+                     out + found, capacity - found);
+    }
+
+    return found;
+}
+
+bool chain_scan_camera_offset(const chain_ctx *ctx, uint64_t pcm,
+                              uint32_t *out_cache_offset)
+{
+    uint32_t off;
+
+    if (ctx == NULL || out_cache_offset == NULL || pcm == 0) {
+        return false;
+    }
+
+    for (off = 0x100; off <= 0x2000; off += 8) {
+        double loc[3];
+        double rot[3];
+        float fov;
+        double mag;
+        vec3 loc_v;
+        vec3 rot_v;
+
+        if (!mem_read(&ctx->target, pcm + off, loc, sizeof(loc))) {
+            continue;
+        }
+
+        loc_v = vec3_make(loc[0], loc[1], loc[2]);
+        if (!vec3_finite(loc_v)) {
+            continue;
+        }
+        if (loc[0] == 0.0 && loc[1] == 0.0 && loc[2] == 0.0) {
+            continue;
+        }
+
+        mag = vec3_length(loc_v);
+        if (mag < 100.0 || mag > 2e7) {
+            continue;
+        }
+
+        if (!mem_read(&ctx->target, pcm + off + 0x18, rot, sizeof(rot))) {
+            continue;
+        }
+        rot_v = vec3_make(rot[0], rot[1], rot[2]);
+        if (!vec3_finite(rot_v)) {
+            continue;
+        }
+
+        if (!mem_read_f32(&ctx->target, pcm + off + 0x30, &fov)) {
+            continue;
+        }
+        if (!(fov > 50.0f) || !(fov < 140.0f)) {
+            continue;
+        }
+
+        *out_cache_offset = off;
+        return true;
     }
 
     return false;

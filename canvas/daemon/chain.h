@@ -80,4 +80,44 @@ bool chain_autoscan_position(const chain_ctx *ctx, uint64_t world,
                              uint32_t *out_rc_off, uint32_t *out_loc_off,
                              bool *out_loc_is_float);
 
+/*
+ * Come chain_autoscan_position ma su un livello specifico, non PersistentLevel.
+ * Usato per scandire i livelli di streaming alla ricerca di attori con posizioni.
+ */
+bool chain_autoscan_position_level(const chain_ctx *ctx, uint64_t level,
+                                   uint32_t *out_rc_off, uint32_t *out_loc_off,
+                                   bool *out_loc_is_float);
+
+/*
+ * Cerca l'offset di UWorld::Levels scandendo world+0x28..0x300 per un TArray
+ * che contiene il PersistentLevel gia' noto. Forte: il match con un puntatore
+ * confermato elimina i falsi positivi.
+ */
+bool chain_scan_levels_offset(const chain_ctx *ctx, uint64_t world,
+                              uint32_t *out_levels_offset);
+
+/*
+ * Raccoglie attori da un singolo livello (non necessariamente PersistentLevel).
+ */
+int chain_collect_actors_from_level(const chain_ctx *ctx, uint64_t level,
+                                    uint64_t skip_actor, vec3 camera_position,
+                                    double max_distance,
+                                    chain_actor *out, int capacity);
+
+/*
+ * Raccoglie attori da TUTTI i livelli nel TArray UWorld::Levels.
+ */
+int chain_collect_actors_all_levels(const chain_ctx *ctx, uint64_t world,
+                                    uint32_t levels_offset,
+                                    uint64_t skip_actor, vec3 camera_position,
+                                    double max_distance,
+                                    chain_actor *out, int capacity);
+
+/*
+ * Scandisce il PCM alla ricerca di dati camera non-zero: 3 double (posizione) +
+ * 3 double (rotazione) a +0x18 + float FOV a +0x30. Torna l'offset dentro il PCM.
+ */
+bool chain_scan_camera_offset(const chain_ctx *ctx, uint64_t pcm,
+                              uint32_t *out_cache_offset);
+
 #endif /* OJBS_CHAIN_H */
