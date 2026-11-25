@@ -493,12 +493,19 @@ static int run_live(const cli_options *options, const ue_offsets *off)
             camera.rotation.yaw == 0.0 &&
             camera.rotation.pitch == 0.0) {
             float yaw_f = 0;
-            if (mem_read_f32(&ctx.target,
-                             controller + 0x320, &yaw_f)) {
-                if (isfinite(yaw_f) && yaw_f != 0.0f &&
-                    yaw_f > -360.0f && yaw_f < 360.0f) {
-                    camera.rotation.yaw = (double)yaw_f;
-                }
+            bool yaw_ok = mem_read_f32(&ctx.target,
+                                       controller + 0x320, &yaw_f);
+            if (diag_tick % (options->fps * 10) == 1) {
+                fprintf(stderr,
+                    "[yaw] PC+0x320 read=%s val=%.2f "
+                    "ctrl=0x%llx\n",
+                    yaw_ok ? "ok" : "FAIL",
+                    yaw_f,
+                    (unsigned long long)controller);
+            }
+            if (yaw_ok && isfinite(yaw_f) && yaw_f != 0.0f &&
+                yaw_f > -360.0f && yaw_f < 360.0f) {
+                camera.rotation.yaw = (double)yaw_f;
             }
             {
                 float pitch_f = 0;
@@ -2069,6 +2076,358 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                             }
                         }
                     }
+                }
+
+                /* --- Pawn finder: scan PC and PlayerStates for
+                   UObject pointers with RootComponent + position --- */
+                fprintf(stderr,
+                    "[dump] --- Pawn finder (PC + PlayerState) ---\n");
+                {
+                    int pf_total = 0;
+                    /* Part A: scan PC 0x0..0x600 */
+                    fprintf(stderr, "[dump] PF-A: scanning PC "
+                            "0x%llx +0x0..0x600\n",
+                            (unsigned long long)controller);
+                    {
+                        uint8_t pc_buf[0x600];
+                        if (mem_read(&ctx.target, controller,
+                                     pc_buf, sizeof(pc_buf))) {
+                            uint32_t poff;
+                            for (poff = 0; poff + 8 <= 0x600;
+                                 poff += 8) {
+                                uint64_t cand;
+                                memcpy(&cand, pc_buf + poff, 8);
+                                if (cand == 0) continue;
+                                if (!mem_ptr_plausible(cand))
+                                    continue;
+                                if (cand == controller) continue;
+                                if (cand >= ctx.target.module_base
+                                    && cand < ctx.target.module_end)
+                                    continue;
+                                if (!mem_looks_like_uobject(
+                                        &ctx.target, cand))
+                                    continue;
+                                /* try RC at 0x100 and 0x1B0 */
+                                uint64_t rc = 0;
+                                uint32_t rc_off = 0;
+                                uint64_t tmp;
+                                tmp = 0;
+                                mem_read_ptr(&ctx.target,
+                                    cand + 0x100, &tmp);
+                                if (tmp != 0) {
+                                    rc = tmp; rc_off = 0x100;
+                                } else {
+                                    tmp = 0;
+                                    mem_read_ptr(&ctx.target,
+                                        cand + 0x1B0, &tmp);
+                                    if (tmp != 0) {
+                                        rc = tmp; rc_off = 0x1B0;
+                                    }
+                                }
+                                if (rc == 0) continue;
+                                /* scan RC for position doubles
+                                   at several offsets */
+                                bool got_pos = false;
+                                static const uint32_t pos_offs[]
+                                    = {0x120, 0x130, 0x140, 0x150,
+                                       0x160, 0x1D0, 0x1E0, 0x1F0,
+                                       0x200, 0x210, 0x220};
+                                int qi;
+                                for (qi = 0;
+                                     qi < (int)(sizeof(pos_offs)
+                                            /sizeof(pos_offs[0]));
+                                     qi++) {
+                                    double dd[3];
+                                    if (!mem_read(&ctx.target,
+                                            rc + pos_offs[qi],
+                                            dd, sizeof(dd)))
+                                        continue;
+                                    if (!isfinite(dd[0])
+                                        || !isfinite(dd[1])
+                                        || !isfinite(dd[2]))
+                                        continue;
+                                    int nz = (dd[0]!=0.0)
+                                           + (dd[1]!=0.0)
+                                           + (dd[2]!=0.0);
+                                    double mag = sqrt(dd[0]*dd[0]
+                                        + dd[1]*dd[1]
+                                        + dd[2]*dd[2]);
+                                    if (nz >= 2
+                                        && mag > 500.0
+                                        && mag < 2e7) {
+                                        got_pos = true;
+                                        fprintf(stderr,
+                                            "[dump] PF PC+0x%03x "
+                                            "-> 0x%llx RC+0x%x "
+                                            "= 0x%llx "
+                                            "pos@0x%x "
+                                            "(%.1f,%.1f,%.1f)\n",
+                                            poff,
+                                            (unsigned long long)
+                                                cand,
+                                            rc_off,
+                                            (unsigned long long)rc,
+                                            pos_offs[qi],
+                                            dd[0], dd[1], dd[2]);
+                                        pf_total++;
+                                        break;
+                                    }
+                                }
+                                /* also try floats */
+                                if (!got_pos) {
+                                    for (qi = 0;
+                                         qi < (int)(sizeof(pos_offs)
+                                                /sizeof(pos_offs[0]));
+                                         qi++) {
+                                        float ff[3];
+                                        if (!mem_read(&ctx.target,
+                                                rc + pos_offs[qi],
+                                                ff, sizeof(ff)))
+                                            continue;
+                                        if (!isfinite(ff[0])
+                                            || !isfinite(ff[1])
+                                            || !isfinite(ff[2]))
+                                            continue;
+                                        int nz = (ff[0]!=0.0f)
+                                               + (ff[1]!=0.0f)
+                                               + (ff[2]!=0.0f);
+                                        double mag = sqrt(
+                                            (double)ff[0]*ff[0]
+                                            + (double)ff[1]*ff[1]
+                                            + (double)ff[2]*ff[2]);
+                                        if (nz >= 2
+                                            && mag > 500.0
+                                            && mag < 2e7) {
+                                            fprintf(stderr,
+                                                "[dump] PF PC"
+                                                "+0x%03x "
+                                                "-> 0x%llx "
+                                                "RC+0x%x "
+                                                "= 0x%llx "
+                                                "fpos@0x%x "
+                                                "(%.1f,%.1f,"
+                                                "%.1f)\n",
+                                                poff,
+                                                (unsigned long long)
+                                                    cand,
+                                                rc_off,
+                                                (unsigned long long)
+                                                    rc,
+                                                pos_offs[qi],
+                                                ff[0], ff[1],
+                                                ff[2]);
+                                            pf_total++;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            fprintf(stderr,
+                                "[dump] PF-A: PC read failed\n");
+                        }
+                    }
+
+                    /* Part B: scan PlayerStates for pawn ptrs */
+                    fprintf(stderr,
+                        "[dump] PF-B: scanning PlayerStates\n");
+                    {
+                        uint64_t gs_obj = 0;
+                        mem_read_ptr(&ctx.target,
+                                     world + 0x270, &gs_obj);
+                        if (gs_obj != 0) {
+                            uint64_t pa_data = 0;
+                            int32_t pa_num = 0;
+                            chain_read_tarray(&ctx,
+                                gs_obj + 0x138,
+                                &pa_data, &pa_num);
+                            int pi;
+                            int ps_lim = pa_num < 40 ? pa_num
+                                                     : 40;
+                            for (pi = 1; pi < ps_lim
+                                 && pf_total < 20;
+                                 pi += 2) {
+                                uint64_t ps = 0;
+                                if (!mem_read_ptr(&ctx.target,
+                                        pa_data
+                                        + (uint64_t)pi * 8,
+                                        &ps))
+                                    continue;
+                                if (ps == 0) continue;
+                                uint8_t ps_buf[0x600];
+                                if (!mem_read(&ctx.target, ps,
+                                        ps_buf,
+                                        sizeof(ps_buf)))
+                                    continue;
+                                uint32_t soff;
+                                bool ps_found = false;
+                                for (soff = 0x200;
+                                     soff + 8 <= 0x600
+                                     && !ps_found;
+                                     soff += 8) {
+                                    uint64_t cand;
+                                    memcpy(&cand,
+                                           ps_buf + soff, 8);
+                                    if (cand == 0) continue;
+                                    if (!mem_ptr_plausible(cand))
+                                        continue;
+                                    if (cand == ps) continue;
+                                    if (cand >= ctx.target
+                                            .module_base
+                                        && cand < ctx.target
+                                            .module_end)
+                                        continue;
+                                    if (!mem_looks_like_uobject(
+                                            &ctx.target, cand))
+                                        continue;
+                                    uint64_t rc = 0;
+                                    uint32_t rc_off = 0;
+                                    uint64_t tmp = 0;
+                                    mem_read_ptr(&ctx.target,
+                                        cand + 0x100, &tmp);
+                                    if (tmp != 0) {
+                                        rc = tmp;
+                                        rc_off = 0x100;
+                                    } else {
+                                        tmp = 0;
+                                        mem_read_ptr(&ctx.target,
+                                            cand + 0x1B0, &tmp);
+                                        if (tmp != 0) {
+                                            rc = tmp;
+                                            rc_off = 0x1B0;
+                                        }
+                                    }
+                                    if (rc == 0) continue;
+                                    static const uint32_t
+                                        pos_offs2[] =
+                                        {0x120, 0x130, 0x140,
+                                         0x150, 0x160, 0x1D0,
+                                         0x1E0, 0x1F0, 0x200,
+                                         0x210, 0x220};
+                                    int qi;
+                                    for (qi = 0;
+                                         qi < (int)(sizeof(
+                                            pos_offs2)
+                                            /sizeof(
+                                            pos_offs2[0]));
+                                         qi++) {
+                                        double dd[3];
+                                        if (!mem_read(&ctx.target,
+                                                rc + pos_offs2[qi],
+                                                dd, sizeof(dd)))
+                                            continue;
+                                        if (!isfinite(dd[0])
+                                            || !isfinite(dd[1])
+                                            || !isfinite(dd[2]))
+                                            continue;
+                                        int nz = (dd[0]!=0.0)
+                                               + (dd[1]!=0.0)
+                                               + (dd[2]!=0.0);
+                                        double mag = sqrt(
+                                            dd[0]*dd[0]
+                                            + dd[1]*dd[1]
+                                            + dd[2]*dd[2]);
+                                        if (nz >= 2
+                                            && mag > 500.0
+                                            && mag < 2e7) {
+                                            fprintf(stderr,
+                                                "[dump] PF "
+                                                "PS[%d]+0x%03x"
+                                                " -> 0x%llx "
+                                                "RC+0x%x "
+                                                "= 0x%llx "
+                                                "pos@0x%x "
+                                                "(%.1f,%.1f,"
+                                                "%.1f)\n",
+                                                pi, soff,
+                                                (unsigned
+                                                long long)cand,
+                                                rc_off,
+                                                (unsigned
+                                                long long)rc,
+                                                pos_offs2[qi],
+                                                dd[0], dd[1],
+                                                dd[2]);
+                                            pf_total++;
+                                            ps_found = true;
+                                            break;
+                                        }
+                                    }
+                                    /* floats */
+                                    if (!ps_found) {
+                                        for (qi = 0;
+                                             qi < (int)(sizeof(
+                                                pos_offs2)
+                                                /sizeof(
+                                                pos_offs2[0]));
+                                             qi++) {
+                                            float ff[3];
+                                            if (!mem_read(
+                                                    &ctx.target,
+                                                    rc
+                                                    + pos_offs2
+                                                        [qi],
+                                                    ff,
+                                                    sizeof(ff)))
+                                                continue;
+                                            if (!isfinite(ff[0])
+                                                || !isfinite(
+                                                    ff[1])
+                                                || !isfinite(
+                                                    ff[2]))
+                                                continue;
+                                            int nz =
+                                                (ff[0]!=0.0f)
+                                              + (ff[1]!=0.0f)
+                                              + (ff[2]!=0.0f);
+                                            double mag = sqrt(
+                                                (double)ff[0]
+                                                    *ff[0]
+                                                + (double)ff[1]
+                                                    *ff[1]
+                                                + (double)ff[2]
+                                                    *ff[2]);
+                                            if (nz >= 2
+                                                && mag > 500.0
+                                                && mag < 2e7) {
+                                                fprintf(stderr,
+                                                    "[dump] PF "
+                                                    "PS[%d]"
+                                                    "+0x%03x"
+                                                    " -> 0x%llx"
+                                                    " RC+0x%x"
+                                                    " = 0x%llx"
+                                                    " fpos"
+                                                    "@0x%x "
+                                                    "(%.1f,"
+                                                    "%.1f,"
+                                                    "%.1f)\n",
+                                                    pi, soff,
+                                                    (unsigned
+                                                    long long)
+                                                        cand,
+                                                    rc_off,
+                                                    (unsigned
+                                                    long long)
+                                                        rc,
+                                                    pos_offs2
+                                                        [qi],
+                                                    ff[0],
+                                                    ff[1],
+                                                    ff[2]);
+                                                pf_total++;
+                                                ps_found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    fprintf(stderr,
+                        "[dump] PF total: %d pawns found\n",
+                        pf_total);
                 }
 
                 fprintf(stderr, "[dump] --- fine ---\n");

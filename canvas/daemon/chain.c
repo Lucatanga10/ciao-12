@@ -1095,17 +1095,32 @@ static int guobj_deep_check(const chain_ctx *ctx,
     static const int sizes[] = {24, 16, 20, 32};
     int s;
 
-    if (!mem_read_ptr(&ctx->target, objects_ptr, &chunk0)) {
-        fprintf(stderr,
-            "[guobj] deep rva=0x%llx: chunk0 read fail\n",
-            (unsigned long long)rva);
-        return 0;
+    {
+        uint64_t raw_val = 0;
+        bool raw_ok = mem_read_u64(&ctx->target, objects_ptr, &raw_val);
+        if (!raw_ok) {
+            fprintf(stderr,
+                "[guobj] deep rva=0x%llx: objects_ptr=0x%llx "
+                "UNREADABLE (process_vm_readv fail)\n",
+                (unsigned long long)rva,
+                (unsigned long long)objects_ptr);
+            return 0;
+        }
+        if (!mem_ptr_plausible(raw_val)) {
+            fprintf(stderr,
+                "[guobj] deep rva=0x%llx: objects_ptr=0x%llx "
+                "-> raw=0x%llx NOT A PTR\n",
+                (unsigned long long)rva,
+                (unsigned long long)objects_ptr,
+                (unsigned long long)raw_val);
+            return 0;
+        }
+        chunk0 = raw_val;
     }
-    if (chunk0 == 0 || !mem_ptr_plausible(chunk0)) {
+    if (chunk0 == 0) {
         fprintf(stderr,
-            "[guobj] deep rva=0x%llx: chunk0=0x%llx bad\n",
-            (unsigned long long)rva,
-            (unsigned long long)chunk0);
+            "[guobj] deep rva=0x%llx: chunk0=0 null\n",
+            (unsigned long long)rva);
         return 0;
     }
     if (!mem_read_ptr(&ctx->target, chunk0, &item0)) {
