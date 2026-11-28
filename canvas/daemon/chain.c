@@ -1042,7 +1042,8 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
                               uint64_t guobj_objects,
                               int guobj_item_size,
                               uint64_t handle,
-                              uint64_t *out_ptr)
+                              uint64_t *out_ptr,
+                              bool direct)
 {
     uint32_t index;
     uint32_t chunk_idx;
@@ -1064,10 +1065,15 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
     chunk_idx = index / GUOBJ_CHUNK_SIZE;
     within_chunk = index % GUOBJ_CHUNK_SIZE;
 
-    if (!mem_read_ptr(&ctx->target,
-                      guobj_objects + (uint64_t)chunk_idx * 8,
-                      &chunk_ptr)) {
-        return false;
+    if (direct) {
+        if (chunk_idx != 0) return false;
+        chunk_ptr = guobj_objects;
+    } else {
+        if (!mem_read_ptr(&ctx->target,
+                          guobj_objects + (uint64_t)chunk_idx * 8,
+                          &chunk_ptr)) {
+            return false;
+        }
     }
     if (chunk_ptr == 0 || !mem_ptr_plausible(chunk_ptr)) {
         return false;
@@ -1309,7 +1315,8 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
                             uint64_t skip_actor,
                             vec3 camera_position,
                             double max_distance,
-                            chain_actor *out, int capacity)
+                            chain_actor *out, int capacity,
+                            bool direct)
 {
     uint64_t gs = 0;
     uint64_t pa_data = 0;
@@ -1341,15 +1348,18 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
 
         for (ps_off = 0x200; ps_off <= 0x400; ps_off += 8) {
             uint64_t handle = 0;
-            uint32_t lo;
+            uint32_t lo, hi;
             mem_read_u64(&ctx->target, ps + ps_off, &handle);
             if (handle == 0) continue;
             lo = (uint32_t)(handle & 0xFFFFFFFF);
-            if (lo < 50 || lo > 500000) continue;
+            hi = (uint32_t)(handle >> 32);
+            if (lo < 2 || lo > 500000) continue;
+            if (hi != lo && hi != 0) continue;
 
             if (!chain_resolve_fobjectptr(ctx, guobj_objects,
                                           guobj_item_size,
-                                          handle, &pawn)) {
+                                          handle, &pawn,
+                                          direct)) {
                 continue;
             }
             if (pawn == skip_actor) continue;

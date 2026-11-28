@@ -152,7 +152,8 @@ bool chain_resolve_fobjectptr(const chain_ctx *ctx,
                               uint64_t guobj_objects,
                               int guobj_item_size,
                               uint64_t handle,
-                              uint64_t *out_ptr);
+                              uint64_t *out_ptr,
+                              bool direct);
 
 int chain_collect_via_guobj(const chain_ctx *ctx,
                             uint64_t world,
@@ -164,6 +165,7 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
                             uint64_t skip_actor,
                             vec3 camera_position,
                             double max_distance,
-                            chain_actor *out, int capacity);
+                            chain_actor *out, int capacity,
+                            bool direct);
 
 #endif /* OJBS_CHAIN_H */

@@ -328,6 +328,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     uint64_t guobj_objects = 0;
     int guobj_item_size = 0;
     bool guobj_found = false;
+    bool guobj_direct = false;
     uint64_t real_pawn = 0;
     uint32_t pawn_rc_off = 0;
     uint32_t pawn_loc_off = 0;
@@ -557,6 +558,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     guobj_objects = 0;
                     guobj_item_size = 0;
                     guobj_found = false;
+                    guobj_direct = false;
                     real_pawn = 0;
                     pawn_pos_locked = false;
                 }
@@ -669,7 +671,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                 if (chain_resolve_fobjectptr(
                                         &ctx, guobj_objects,
                                         guobj_item_size,
-                                        pawn_h, &rp)) {
+                                        pawn_h, &rp,
+                                        false)) {
                                     real_pawn = rp;
                                     fprintf(stderr,
                                         "[dump] PAWN: "
@@ -1173,6 +1176,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                                             = pp;
                                                         guobj_found
                                                             = true;
+                                                        guobj_direct
+                                                            = true;
                                                         guobj_item_size
                                                             = S;
                                                         guobj_objects
@@ -1247,6 +1252,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                                                 = pp2;
                                                             guobj_found
                                                                 = true;
+                                                            guobj_direct
+                                                                = true;
                                                             guobj_item_size
                                                                 = S;
                                                             guobj_objects
@@ -1270,6 +1277,89 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                             }
                         }
                     }
+                }
+
+                /* --- pawn RC probe (after heap scan) --- */
+                if (real_pawn != 0 && !pawn_pos_locked) {
+                    fprintf(stderr,
+                        "[dump] probing pawn 0x%llx "
+                        "for RC+pos\n",
+                        (unsigned long long)real_pawn);
+                    uint32_t rco;
+                    for (rco = 0x100; rco <= 0x300;
+                         rco += 8) {
+                        uint64_t rc = 0;
+                        mem_read_ptr(&ctx.target,
+                            real_pawn + rco, &rc);
+                        if (rc == 0
+                            || !mem_ptr_plausible(rc))
+                            continue;
+                        if (!mem_looks_like_uobject(
+                                &ctx.target, rc))
+                            continue;
+                        uint32_t lo;
+                        for (lo = 0x100; lo <= 0x300;
+                             lo += 8) {
+                            double xyz[3];
+                            if (!mem_read(&ctx.target,
+                                    rc + lo, xyz, 24))
+                                continue;
+                            vec3 p = vec3_make(
+                                xyz[0], xyz[1], xyz[2]);
+                            if (vec3_finite(p)
+                                && vec3_plausible(p, 2e7)
+                                && vec3_length(p)
+                                   > 1000.0) {
+                                fprintf(stderr,
+                                    "[dump] PAWN POS: "
+                                    "rc=+0x%x "
+                                    "loc=+0x%x "
+                                    "(%.0f,%.0f,%.0f)"
+                                    "\n",
+                                    rco, lo,
+                                    p.x, p.y, p.z);
+                                pawn_rc_off = rco;
+                                pawn_loc_off = lo;
+                                pawn_loc_float = false;
+                                pawn_pos_locked = true;
+                                goto pawn_probe_done;
+                            }
+                        }
+                        for (lo = 0x100; lo <= 0x300;
+                             lo += 4) {
+                            float fxyz[3];
+                            if (!mem_read(&ctx.target,
+                                    rc + lo, fxyz, 12))
+                                continue;
+                            vec3 p = vec3_make(
+                                (double)fxyz[0],
+                                (double)fxyz[1],
+                                (double)fxyz[2]);
+                            if (vec3_finite(p)
+                                && vec3_plausible(p, 2e7)
+                                && vec3_length(p)
+                                   > 1000.0) {
+                                fprintf(stderr,
+                                    "[dump] PAWN POS "
+                                    "(float): "
+                                    "rc=+0x%x "
+                                    "loc=+0x%x "
+                                    "(%.0f,%.0f,%.0f)"
+                                    "\n",
+                                    rco, lo,
+                                    p.x, p.y, p.z);
+                                pawn_rc_off = rco;
+                                pawn_loc_off = lo;
+                                pawn_loc_float = true;
+                                pawn_pos_locked = true;
+                                goto pawn_probe_done;
+                            }
+                        }
+                    }
+                    fprintf(stderr,
+                        "[dump] pawn: no position "
+                        "found in RC scan\n");
+                    pawn_probe_done:;
                 }
 
                 /* --- UWorld UObject map (all ptrs) --- */
@@ -3069,7 +3159,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     pawn_loc_float,
                     real_pawn, camera.position,
                     options->max_meters * 100.0,
-                    actors, OJBS_MAX_ACTORS);
+                    actors, OJBS_MAX_ACTORS,
+                    guobj_direct);
             } else if (match_actors_avail && ftransform_locked) {
                 actor_count = chain_collect_actors_from_tarray(
                     &ctx, match_tarray_obj + 0x140,
