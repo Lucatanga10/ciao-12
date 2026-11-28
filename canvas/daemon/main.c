@@ -879,53 +879,43 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                             best_off,
                             gw_idx, pc_idx, pcm_idx, gs_idx);
 
-                        /* find the chunk via /proc/maps */
-                        int32_t use_idx = -1;
-                        uint64_t use_addr = 0;
-                        uint64_t verify_addr = 0;
-                        int32_t verify_idx = -1;
-                        if (gw_idx > 0 && gw_idx < 2000000) {
-                            use_idx = gw_idx;
-                            use_addr = world;
-                            if (pc_idx > 0 && pc_idx < 2000000) {
-                                verify_idx = pc_idx;
-                                verify_addr = controller;
-                            }
-                        } else if (pc_idx > 0
-                                   && pc_idx < 2000000) {
-                            use_idx = pc_idx;
-                            use_addr = controller;
-                        }
-                        if (use_idx > 0) {
-                            int chunk_n = use_idx / 65536;
-                            int within = use_idx % 65536;
-                            fprintf(stderr,
-                                "[dump] target: idx=%d "
-                                "chunk=%d slot=%d "
-                                "addr=0x%llx\n",
-                                use_idx, chunk_n, within,
-                                (unsigned long long)use_addr);
-                            char maps_path[64];
-                            snprintf(maps_path,
-                                sizeof(maps_path),
-                                "/proc/%d/maps",
-                                (int)pid);
-                            FILE *mf = fopen(maps_path, "r");
-                            if (mf) {
-                                char mline[512];
-                                int tried = 0;
-                                bool cf = false;
-                                while (fgets(mline,
-                                       sizeof(mline), mf)
-                                       && tried < 500
-                                       && !cf) {
+                        /* heap scan: find GWorld value
+                           in memory, verify UObj neighbors
+                           to locate the GUObjectArray chunk */
+                        {
+                            char mp2[64];
+                            snprintf(mp2, sizeof(mp2),
+                                "/proc/%d/maps", (int)pid);
+                            FILE *mf = fopen(mp2, "r");
+                            if (!mf) {
+                                fprintf(stderr,
+                                    "[dump] maps open fail\n");
+                            } else {
+                                uint64_t needle = world;
+                                fprintf(stderr,
+                                    "[dump] heap scan for "
+                                    "0x%llx\n",
+                                    (unsigned long long)
+                                    needle);
+                                char ml2[512];
+                                int mt = 0;
+                                bool hf = false;
+                                while (fgets(ml2,
+                                       sizeof(ml2), mf)
+                                       && !hf
+                                       && mt < 800) {
                                     uint64_t ms, me;
                                     char mp[5];
-                                    if (sscanf(mline,
+                                    if (sscanf(ml2,
                                             "%lx-%lx %4s",
-                                            (unsigned long *)&ms,
-                                            (unsigned long *)&me,
+                                            (unsigned long *)
+                                            &ms,
+                                            (unsigned long *)
+                                            &me,
                                             mp) != 3)
+                                        continue;
+                                    if (mp[0] != 'r'
+                                        || mp[1] != 'w')
                                         continue;
                                     if (ms >= ctx.target
                                             .module_base
@@ -933,467 +923,351 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                             .module_end)
                                         continue;
                                     uint64_t msz = me - ms;
-                                    if (msz < 0x100000)
+                                    if (msz < 0x10000)
                                         continue;
-                                    if (mp[0] != 'r'
-                                        || mp[1] != 'w')
-                                        continue;
-                                    static const int isz[]
-                                        = {24, 16, 20, 32};
-                                    int si;
-                                    for (si = 0; si < 4;
-                                         si++) {
-                                        uint64_t eoff =
-                                            (uint64_t)within
-                                            * isz[si];
-                                        if (eoff + 8 > msz)
-                                            continue;
-                                        uint64_t rv = 0;
-                                        if (!mem_read_u64(
+                                    mt++;
+                                    uint8_t pg[32768];
+                                    uint64_t pa;
+                                    for (pa = ms;
+                                         pa < me && !hf;
+                                         pa += sizeof(pg)) {
+                                        size_t rs =
+                                            sizeof(pg);
+                                        if (pa + rs > me)
+                                            rs = (size_t)
+                                            (me - pa);
+                                        if (!mem_read(
                                                 &ctx.target,
-                                                ms + eoff,
-                                                &rv))
+                                                pa, pg, rs))
                                             continue;
-                                        if (rv != use_addr)
-                                            continue;
-                                        fprintf(stderr,
-                                            "[dump] CHUNK "
-                                            "MATCH: "
-                                            "base=0x%llx "
-                                            "isz=%d "
-                                            "slot=%d "
-                                            "val=0x%llx\n",
-                                            (unsigned
-                                            long long)ms,
-                                            isz[si], within,
-                                            (unsigned
-                                            long long)rv);
-                                        /* verify with 2nd
-                                           known UObject */
-                                        bool verified = false;
-                                        if (verify_idx > 0
-                                            && verify_idx
-                                               / 65536
-                                               == chunk_n) {
-                                            int vw =
-                                                verify_idx
-                                                % 65536;
-                                            uint64_t vo =
-                                                (uint64_t)vw
-                                                * isz[si];
-                                            uint64_t vv = 0;
-                                            if (vo + 8 <= msz
-                                                && mem_read_u64(
-                                                    &ctx.target,
-                                                    ms + vo,
-                                                    &vv)) {
-                                                fprintf(stderr,
-                                                    "[dump] "
-                                                    "verify: "
-                                                    "slot%d "
-                                                    "=0x%llx "
-                                                    "expect "
-                                                    "0x%llx "
-                                                    "%s\n",
-                                                    vw,
-                                                    (unsigned
-                                                    long long)
-                                                    vv,
-                                                    (unsigned
-                                                    long long)
-                                                    verify_addr,
-                                                    vv ==
-                                                    verify_addr
-                                                    ? "OK"
-                                                    : "MISS");
-                                                if (vv ==
-                                                    verify_addr)
-                                                    verified
-                                                    = true;
-                                            }
-                                        } else {
-                                            /* verify item[1]:
-                                               should be a
-                                               valid UObj */
-                                            uint64_t i1 = 0;
-                                            if (mem_read_u64(
-                                                    &ctx.target,
-                                                    ms
-                                                    + isz[si],
-                                                    &i1)
-                                                && i1 != 0
-                                                && mem_ptr_plausible(
-                                                    i1)
-                                                && mem_looks_like_uobject(
-                                                    &ctx.target,
-                                                    i1)) {
-                                                fprintf(stderr,
-                                                    "[dump] "
-                                                    "verify: "
-                                                    "item[1]"
-                                                    "=0x%llx"
-                                                    " UObj OK"
-                                                    "\n",
-                                                    (unsigned
-                                                    long long)
-                                                    i1);
-                                                verified = true;
-                                            }
-                                        }
-                                        if (verified) {
-                                            /* compute
-                                               Objects ptr:
-                                               chunk_ptrs
-                                               array holds
-                                               chunk base
-                                               at [chunk_n].
-                                               We found the
-                                               chunk base,
-                                               need the array.
-                                               But we can
-                                               use the chunk
-                                               directly. */
-                                            guobj_found = true;
-                                            guobj_item_size
-                                                = isz[si];
-                                            /* store chunk
-                                               base; we'll
-                                               compute the
-                                               Objects ptr
-                                               addr as the
-                                               chunk base
-                                               minus the
-                                               within-chunk
-                                               offset
-                                               conceptually.
-                                               Actually we
-                                               need the
-                                               chunk pointer
-                                               array.
-                                               Scan backward
-                                               from chunk
-                                               base in heap
-                                               for a pointer
-                                               to this chunk.
-                                               */
-                                            /* simpler: scan
-                                               nearby heap
-                                               for a pointer
-                                               containing
-                                               chunk base */
-                                            uint64_t cbase
-                                                = ms;
+                                        uint32_t pi;
+                                        for (pi = 0;
+                                             pi + 8 <= rs
+                                             && !hf;
+                                             pi += 8) {
+                                            uint64_t v;
+                                            memcpy(&v,
+                                                pg + pi, 8);
+                                            if (v != needle)
+                                                continue;
+                                            uint64_t hit =
+                                                pa + pi;
                                             fprintf(stderr,
                                                 "[dump] "
-                                                "scanning "
-                                                "for chunk "
-                                                "ptr array "
-                                                "(target="
-                                                "0x%llx)\n",
+                                                "NEEDLE "
+                                                "0x%llx\n",
                                                 (unsigned
                                                 long long)
-                                                cbase);
-                                            /* scan the
-                                               module .data
-                                               for a pointer
-                                               to this chunk
-                                               or its parent
-                                               array */
-                                            uint64_t mbase
-                                                = ctx.target
-                                                .module_base;
-                                            uint64_t mend
-                                                = ctx.target
-                                                .module_end;
-                                            /* scan last
-                                               20% of module
-                                               (.data/.bss)
-                                               for the
-                                               chunk base */
-                                            uint64_t dscan
-                                                = mbase
-                                                + (mend
-                                                   - mbase)
-                                                * 4 / 5;
-                                            uint8_t dp[4096];
-                                            uint64_t da;
-                                            bool arr_found
-                                                = false;
-                                            for (da = dscan;
-                                                 da < mend
-                                                 && !arr_found;
-                                                 da += 4096) {
-                                                size_t rdsz
-                                                    = 4096;
-                                                if (da + rdsz
-                                                    > mend)
-                                                    rdsz =
-                                                    (size_t)
-                                                    (mend - da);
-                                                if (!mem_read(
-                                                        &ctx.target,
-                                                        da, dp,
-                                                        rdsz))
-                                                    continue;
-                                                uint32_t di;
-                                                for (di = 0;
-                                                     di + 8
-                                                     <= rdsz;
-                                                     di += 8) {
-                                                    uint64_t pv;
-                                                    memcpy(&pv,
-                                                        dp + di,
-                                                        8);
-                                                    if (pv == 0
-                                                        || !mem_ptr_plausible(pv))
+                                                hit);
+                                            static const
+                                                int isz[]
+                                                = {24, 16,
+                                                   20, 32};
+                                            int si;
+                                            for (si = 0;
+                                                 si < 4
+                                                 && !hf;
+                                                 si++) {
+                                                int S =
+                                                    isz[si];
+                                                int uc = 0;
+                                                int ck;
+                                                for (ck = -3;
+                                                     ck <= 3;
+                                                     ck++) {
+                                                    if (!ck) {
+                                                        uc++;
                                                         continue;
-                                                    if (pv >= mbase
-                                                        && pv < mend)
-                                                        continue;
-                                                    /* read
-                                                       *pv and
-                                                       see if
-                                                       it's the
-                                                       chunk */
+                                                    }
                                                     uint64_t
-                                                        ch_test
-                                                        = 0;
-                                                    if (chunk_n
-                                                        == 0) {
-                                                        mem_read_u64(
-                                                            &ctx.target,
-                                                            pv,
-                                                            &ch_test);
-                                                    } else {
-                                                        mem_read_u64(
-                                                            &ctx.target,
-                                                            pv
-                                                            + (uint64_t)
-                                                            chunk_n
-                                                            * 8,
-                                                            &ch_test);
+                                                        na =
+                                                        hit
+                                                        + (int64_t)
+                                                        ck * S;
+                                                    uint64_t
+                                                        nv = 0;
+                                                    if (!mem_read_u64(
+                                                            &ctx
+                                                            .target,
+                                                            na,
+                                                            &nv))
+                                                        continue;
+                                                    if (nv == 0)
+                                                    { uc++;
+                                                      continue;
                                                     }
-                                                    if (ch_test
-                                                        == cbase) {
-                                                        guobj_objects
-                                                            = pv;
-                                                        fprintf(
-                                                            stderr,
-                                                            "[dump]"
-                                                            " GUOBJ"
-                                                            " Objects"
-                                                            "=0x%llx"
-                                                            " rva="
-                                                            "0x%llx"
-                                                            " isz=%d"
-                                                            " chunk%d"
-                                                            "=0x%llx"
-                                                            "\n",
-                                                            (unsigned
-                                                            long
-                                                            long)
-                                                            guobj_objects,
-                                                            (unsigned
-                                                            long
-                                                            long)
-                                                            (da + di
-                                                            - mbase),
-                                                            guobj_item_size,
-                                                            chunk_n,
-                                                            (unsigned
-                                                            long
-                                                            long)
-                                                            cbase);
-                                                        arr_found
-                                                            = true;
-                                                        break;
-                                                    }
+                                                    if (mem_ptr_plausible(
+                                                            nv)
+                                                        && mem_looks_like_uobject(
+                                                            &ctx
+                                                            .target,
+                                                            nv))
+                                                        uc++;
                                                 }
-                                            }
-                                            if (!arr_found) {
-                                                /* use chunk
-                                                   directly —
-                                                   store chunk
-                                                   base as a
-                                                   fake Objects
-                                                   that works
-                                                   for chunk 0
-                                                   */
-                                                if (chunk_n
-                                                    == 0) {
-                                                    /* we can
-                                                       fake it:
-                                                       create a
-                                                       local
-                                                       ptr array
-                                                       and store
-                                                       the
-                                                       chunk base
-                                                       — but we
-                                                       can't
-                                                       write to
-                                                       the
-                                                       process.
-                                                       Just log
-                                                       and store
-                                                       the chunk
-                                                       base for
-                                                       direct
-                                                       use. */
+                                                if (uc < 5)
+                                                    continue;
+                                                fprintf(stderr,
+                                                    "[dump] "
+                                                    "CHUNK "
+                                                    "isz=%d "
+                                                    "nb=%d/7"
+                                                    "\n",
+                                                    S, uc);
+                                                /* backward
+                                                   scan to
+                                                   find chunk
+                                                   base */
+                                                int gs = 0;
+                                                int nl = 0;
+                                                uint64_t sa
+                                                    = hit;
+                                                while (gs
+                                                       < 65536
+                                                       && nl
+                                                       < 5) {
+                                                    sa -= S;
+                                                    uint64_t
+                                                        sv = 0;
+                                                    if (!mem_read_u64(
+                                                            &ctx
+                                                            .target,
+                                                            sa,
+                                                            &sv)
+                                                        || sv
+                                                        == 0) {
+                                                        nl++;
+                                                    } else {
+                                                        nl = 0;
+                                                    }
+                                                    gs++;
+                                                }
+                                                gs -= nl;
+                                                uint64_t cb
+                                                    = hit
+                                                    - (uint64_t)
+                                                    gs * S;
+                                                fprintf(stderr,
+                                                    "[dump] "
+                                                    "cbase="
+                                                    "0x%llx "
+                                                    "gw_slot"
+                                                    "=%d\n",
+                                                    (unsigned
+                                                    long long)
+                                                    cb, gs);
+                                                /* dump
+                                                   slots near
+                                                   hit */
+                                                int d2;
+                                                for (d2 = -2;
+                                                     d2 <= 5;
+                                                     d2++) {
+                                                    uint64_t
+                                                        da2 =
+                                                        hit
+                                                        + (int64_t)
+                                                        d2 * S;
+                                                    uint64_t
+                                                        dv2
+                                                        = 0;
+                                                    mem_read_u64(
+                                                        &ctx
+                                                        .target,
+                                                        da2,
+                                                        &dv2);
                                                     fprintf(
                                                         stderr,
                                                         "[dump]"
-                                                        " chunk"
-                                                        " ptr "
-                                                        "array "
-                                                        "not "
-                                                        "found "
-                                                        "in "
-                                                        "module;"
-                                                        " using"
-                                                        " chunk"
-                                                        " base "
-                                                        "directly"
-                                                        "\n");
+                                                        " [gw"
+                                                        "%+d]"
+                                                        "=0x"
+                                                        "%llx"
+                                                        "%s\n",
+                                                        d2,
+                                                        (unsigned
+                                                        long
+                                                        long)
+                                                        dv2,
+                                                        (dv2
+                                                        && mem_ptr_plausible(
+                                                            dv2)
+                                                        && mem_looks_like_uobject(
+                                                            &ctx
+                                                            .target,
+                                                            dv2))
+                                                        ? " UObj"
+                                                        : "");
                                                 }
-                                            }
-                                            cf = true;
-                                            /* try resolving
-                                               pawn handle
-                                               using found
-                                               chunk */
-                                            {
-                                                uint64_t ph = 0;
+                                                /* resolve
+                                                   pawn from
+                                                   handle */
+                                                uint64_t
+                                                    ph = 0;
                                                 mem_read_u64(
                                                     &ctx.target,
                                                     controller
                                                     + 0x80,
                                                     &ph);
-                                                if (ph != 0) {
-                                                    uint32_t pi2
-                                                        = (uint32_t)
-                                                        (ph
-                                                        & 0xFFFFFFFF);
-                                                    int pchk
-                                                        = pi2
-                                                        / 65536;
-                                                    int pslot
-                                                        = pi2
-                                                        % 65536;
+                                                uint32_t pidx
+                                                    = (uint32_t)
+                                                    (ph
+                                                    & 0xFFFFFFFF);
+                                                fprintf(stderr,
+                                                    "[dump] "
+                                                    "pawn "
+                                                    "h=0x%llx"
+                                                    " idx=%u"
+                                                    "\n",
+                                                    (unsigned
+                                                    long long)
+                                                    ph, pidx);
+                                                if (pidx
+                                                    < 65536) {
                                                     uint64_t
-                                                        poff2
-                                                        = (uint64_t)
-                                                        pslot
-                                                        * guobj_item_size;
+                                                        ppa =
+                                                        cb
+                                                        + (uint64_t)
+                                                        pidx
+                                                        * S;
+                                                    uint64_t
+                                                        pp = 0;
+                                                    mem_read_u64(
+                                                        &ctx
+                                                        .target,
+                                                        ppa,
+                                                        &pp);
                                                     fprintf(
                                                         stderr,
                                                         "[dump]"
-                                                        " pawn "
-                                                        "handle"
-                                                        "=0x%llx"
-                                                        " idx=%u"
-                                                        " chunk"
-                                                        "=%d "
-                                                        "slot="
-                                                        "%d\n",
+                                                        " slot"
+                                                        "[%u]"
+                                                        "=0x"
+                                                        "%llx"
+                                                        "\n",
+                                                        pidx,
                                                         (unsigned
                                                         long
-                                                        long)ph,
-                                                        pi2,
-                                                        pchk,
-                                                        pslot);
-                                                    if (pchk
-                                                        == chunk_n) {
-                                                        /* same
-                                                           chunk
-                                                           — read
-                                                           directly
-                                                           */
+                                                        long)
+                                                        pp);
+                                                    if (pp != 0
+                                                        && mem_ptr_plausible(
+                                                            pp)
+                                                        && mem_looks_like_uobject(
+                                                            &ctx
+                                                            .target,
+                                                            pp))
+                                                    {
+                                                        fprintf(
+                                                            stderr,
+                                                            "[dump]"
+                                                            " PAWN"
+                                                            " RESOLVED"
+                                                            ": 0x"
+                                                            "%llx"
+                                                            "\n",
+                                                            (unsigned
+                                                            long
+                                                            long)
+                                                            pp);
+                                                        real_pawn
+                                                            = pp;
+                                                        guobj_found
+                                                            = true;
+                                                        guobj_item_size
+                                                            = S;
+                                                        guobj_objects
+                                                            = cb;
+                                                    }
+                                                }
+                                                /* also try
+                                                   upper 32
+                                                   bits */
+                                                if (!guobj_found
+                                                    && ph != 0) {
+                                                    uint32_t
+                                                        pidx2 =
+                                                        (uint32_t)
+                                                        (ph >> 32);
+                                                    if (pidx2
+                                                        != pidx
+                                                        && pidx2
+                                                        < 65536)
+                                                    {
                                                         uint64_t
-                                                            pp = 0;
-                                                        if (poff2
-                                                            + 8
-                                                            <= msz
-                                                            && mem_read_u64(
-                                                                &ctx.target,
-                                                                ms
-                                                                + poff2,
-                                                                &pp)
-                                                            && pp != 0
+                                                            pp2a =
+                                                            cb
+                                                            + (uint64_t)
+                                                            pidx2
+                                                            * S;
+                                                        uint64_t
+                                                            pp2
+                                                            = 0;
+                                                        mem_read_u64(
+                                                            &ctx
+                                                            .target,
+                                                            pp2a,
+                                                            &pp2);
+                                                        fprintf(
+                                                            stderr,
+                                                            "[dump]"
+                                                            " hi"
+                                                            " slot"
+                                                            "[%u]"
+                                                            "=0x"
+                                                            "%llx"
+                                                            "\n",
+                                                            pidx2,
+                                                            (unsigned
+                                                            long
+                                                            long)
+                                                            pp2);
+                                                        if (pp2
+                                                            != 0
                                                             && mem_ptr_plausible(
-                                                                pp)) {
+                                                                pp2)
+                                                            && mem_looks_like_uobject(
+                                                                &ctx
+                                                                .target,
+                                                                pp2))
+                                                        {
                                                             fprintf(
                                                                 stderr,
                                                                 "[dump]"
                                                                 " PAWN"
-                                                                " RESOLVED:"
-                                                                " 0x%llx"
+                                                                " via"
+                                                                " hi"
+                                                                ": 0x"
+                                                                "%llx"
                                                                 "\n",
                                                                 (unsigned
                                                                 long
-                                                                long)pp);
+                                                                long)
+                                                                pp2);
                                                             real_pawn
-                                                                = pp;
-                                                        } else {
-                                                            fprintf(
-                                                                stderr,
-                                                                "[dump]"
-                                                                " pawn"
-                                                                " slot"
-                                                                " read:"
-                                                                " raw="
-                                                                "0x%llx"
-                                                                "\n",
-                                                                (unsigned
-                                                                long
-                                                                long)pp);
+                                                                = pp2;
+                                                            guobj_found
+                                                                = true;
+                                                            guobj_item_size
+                                                                = S;
+                                                            guobj_objects
+                                                                = cb;
                                                         }
-                                                    } else {
-                                                        fprintf(
-                                                            stderr,
-                                                            "[dump]"
-                                                            " pawn"
-                                                            " in "
-                                                            "diff "
-                                                            "chunk"
-                                                            " (%d"
-                                                            " vs "
-                                                            "%d)"
-                                                            "\n",
-                                                            pchk,
-                                                            chunk_n);
                                                     }
                                                 }
+                                                hf = true;
                                             }
-                                        } else {
-                                            fprintf(stderr,
-                                                "[dump] "
-                                                "chunk "
-                                                "match NOT "
-                                                "verified\n");
                                         }
-                                        if (cf) break;
                                     }
-                                    tried++;
                                 }
                                 fclose(mf);
-                                if (!cf) {
+                                if (!hf) {
                                     fprintf(stderr,
-                                        "[dump] chunk "
+                                        "[dump] needle "
                                         "not found in "
-                                        "%d mappings\n",
-                                        tried);
+                                        "%d maps\n",
+                                        mt);
                                 }
-                            } else {
-                                fprintf(stderr,
-                                    "[dump] /proc/%d/maps "
-                                    "open failed\n",
-                                    (int)pid);
                             }
-                        } else {
-                            fprintf(stderr,
-                                "[dump] no valid index "
-                                "found\n");
                         }
                     }
                 }
