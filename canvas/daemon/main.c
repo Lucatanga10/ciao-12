@@ -491,8 +491,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
         /* camera yaw fallback: PC+0x320 confirmed as yaw float */
         {
             bool yaw_cond = chain_ok &&
-                camera.rotation.yaw == 0.0 &&
-                camera.rotation.pitch == 0.0;
+                fabs(camera.rotation.yaw) < 0.1 &&
+                fabs(camera.rotation.pitch) < 0.1;
             if (diag_tick < 3) {
                 fprintf(stderr,
                     "[yaw] tick=%d cond=%d chain=%d "
@@ -800,54 +800,83 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         fprintf(stderr,
                             "[dump] --- GUObj chunk finder "
                             "(index scan) ---\n");
-                        /* read internal index (+0x0C) from
-                           known UObjects */
+                        /* auto-detect InternalIndex offset
+                           by scanning +0x08..+0x14 */
                         int32_t gw_idx = -1, pc_idx = -1;
                         int32_t pcm_idx = -1, gs_idx = -1;
+                        uint32_t best_off = 0x0C;
+                        int best_score = 0;
                         uint32_t idx_off;
                         for (idx_off = 0x08;
                              idx_off <= 0x14; idx_off += 4) {
-                            int32_t v = 0;
-                            if (mem_read(&ctx.target,
-                                    world + idx_off, &v, 4)
-                                && v > 0 && v < 2000000)
+                            int32_t vg = -1, vp = -1, vm = -1;
+                            int score = 0;
+                            int distinct = 0;
+                            mem_read(&ctx.target,
+                                world + idx_off, &vg, 4);
+                            mem_read(&ctx.target,
+                                controller + idx_off, &vp, 4);
+                            if (pcm != 0)
+                                mem_read(&ctx.target,
+                                    pcm + idx_off, &vm, 4);
+                            if (vg > 0 && vg < 2000000) {
+                                score++;
                                 fprintf(stderr,
                                     "[dump] GW+0x%02x idx=%d\n",
-                                    idx_off, v);
-                            v = 0;
-                            if (mem_read(&ctx.target,
-                                    controller + idx_off,
-                                    &v, 4)
-                                && v > 0 && v < 2000000)
+                                    idx_off, vg);
+                            }
+                            if (vp > 0 && vp < 2000000) {
+                                score++;
                                 fprintf(stderr,
                                     "[dump] PC+0x%02x idx=%d\n",
-                                    idx_off, v);
-                            v = 0;
-                            if (pcm != 0 && mem_read(&ctx.target,
-                                    pcm + idx_off, &v, 4)
-                                && v > 0 && v < 2000000)
+                                    idx_off, vp);
+                            }
+                            if (vm > 0 && vm < 2000000) {
+                                score++;
                                 fprintf(stderr,
                                     "[dump] PCM+0x%02x idx=%d\n",
-                                    idx_off, v);
+                                    idx_off, vm);
+                            }
+                            /* bonus for diversity —
+                               same value across all 3
+                               is suspicious */
+                            if (vg > 0 && vp > 0 && vg != vp)
+                                distinct++;
+                            if (vg > 0 && vm > 0 && vg != vm)
+                                distinct++;
+                            if (vp > 0 && vm > 0 && vp != vm)
+                                distinct++;
+                            score += distinct;
+                            if (score > best_score) {
+                                best_score = score;
+                                best_off = idx_off;
+                            }
                         }
+                        fprintf(stderr,
+                            "[dump] best index offset: "
+                            "+0x%02x (score=%d)\n",
+                            best_off, best_score);
                         mem_read(&ctx.target,
-                            world + 0x0C, &gw_idx, 4);
+                            world + best_off, &gw_idx, 4);
                         mem_read(&ctx.target,
-                            controller + 0x0C, &pc_idx, 4);
+                            controller + best_off,
+                            &pc_idx, 4);
                         if (pcm != 0)
                             mem_read(&ctx.target,
-                                pcm + 0x0C, &pcm_idx, 4);
+                                pcm + best_off, &pcm_idx, 4);
                         {
                             uint64_t gs2 = 0;
                             mem_read_ptr(&ctx.target,
                                 world + 0x270, &gs2);
                             if (gs2 != 0)
                                 mem_read(&ctx.target,
-                                    gs2 + 0x0C, &gs_idx, 4);
+                                    gs2 + best_off,
+                                    &gs_idx, 4);
                         }
                         fprintf(stderr,
-                            "[dump] indexes @+0x0C: "
+                            "[dump] indexes @+0x%02x: "
                             "GW=%d PC=%d PCM=%d GS=%d\n",
+                            best_off,
                             gw_idx, pc_idx, pcm_idx, gs_idx);
 
                         /* find the chunk via /proc/maps */
