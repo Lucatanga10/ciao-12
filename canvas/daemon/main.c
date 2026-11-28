@@ -334,6 +334,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
     uint32_t pawn_loc_off = 0;
     bool pawn_loc_float = false;
     bool pawn_pos_locked = false;
+    int cam_fb_diag = 0;
 
     memcpy(&mutable_off, off, sizeof(mutable_off));
     memset(&ctx, 0, sizeof(ctx));
@@ -437,7 +438,20 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         if (vec3_plausible(p, 2e7) &&
                             vec3_length(p) > 100.0) {
                             camera.position = p;
+                        } else if (cam_fb_diag < 3) {
+                            fprintf(stderr,
+                                "[cam-fb] plaus fail "
+                                "(%.0f,%.0f,%.0f)\n",
+                                p.x, p.y, p.z);
+                            cam_fb_diag++;
                         }
+                    } else if (cam_fb_diag < 3) {
+                        fprintf(stderr,
+                            "[cam-fb] float read fail "
+                            "rc=0x%llx+0x%x\n",
+                            (unsigned long long)rc,
+                            pawn_loc_off);
+                        cam_fb_diag++;
                     }
                 } else {
                     double xyz[3];
@@ -449,9 +463,29 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         if (vec3_plausible(p, 2e7) &&
                             vec3_length(p) > 100.0) {
                             camera.position = p;
+                        } else if (cam_fb_diag < 3) {
+                            fprintf(stderr,
+                                "[cam-fb] plaus fail "
+                                "(%.0f,%.0f,%.0f)\n",
+                                p.x, p.y, p.z);
+                            cam_fb_diag++;
                         }
+                    } else if (cam_fb_diag < 3) {
+                        fprintf(stderr,
+                            "[cam-fb] dbl read fail "
+                            "rc=0x%llx+0x%x\n",
+                            (unsigned long long)rc,
+                            pawn_loc_off);
+                        cam_fb_diag++;
                     }
                 }
+            } else if (cam_fb_diag < 3) {
+                fprintf(stderr,
+                    "[cam-fb] rc bad: 0x%llx "
+                    "(pawn+0x%x)\n",
+                    (unsigned long long)rc,
+                    pawn_rc_off);
+                cam_fb_diag++;
             }
         } else if (chain_ok && ftransform_locked &&
             camera.position.x == 0.0 &&
@@ -561,6 +595,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     guobj_direct = false;
                     real_pawn = 0;
                     pawn_pos_locked = false;
+                    cam_fb_diag = 0;
                 }
                 last_world = world;
                 world_dumped = false;
@@ -1283,10 +1318,11 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                 if (real_pawn != 0 && !pawn_pos_locked) {
                     fprintf(stderr,
                         "[dump] probing pawn 0x%llx "
-                        "for RC+pos\n",
+                        "for RC+pos (wide)\n",
                         (unsigned long long)real_pawn);
+                    int rc_cand = 0;
                     uint32_t rco;
-                    for (rco = 0x100; rco <= 0x300;
+                    for (rco = 0x100; rco <= 0x400;
                          rco += 8) {
                         uint64_t rc = 0;
                         mem_read_ptr(&ctx.target,
@@ -1297,8 +1333,16 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                         if (!mem_looks_like_uobject(
                                 &ctx.target, rc))
                             continue;
+                        rc_cand++;
+                        if (rc_cand <= 8) {
+                            fprintf(stderr,
+                                "[dump] pawn+0x%x -> "
+                                "UObj 0x%llx\n",
+                                rco,
+                                (unsigned long long)rc);
+                        }
                         uint32_t lo;
-                        for (lo = 0x100; lo <= 0x300;
+                        for (lo = 0x40; lo <= 0x500;
                              lo += 8) {
                             double xyz[3];
                             if (!mem_read(&ctx.target,
@@ -1306,10 +1350,15 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                 continue;
                             vec3 p = vec3_make(
                                 xyz[0], xyz[1], xyz[2]);
+                            int nz = 0;
+                            if (fabs(p.x) > 10.0) nz++;
+                            if (fabs(p.y) > 10.0) nz++;
+                            if (fabs(p.z) > 10.0) nz++;
                             if (vec3_finite(p)
                                 && vec3_plausible(p, 2e7)
                                 && vec3_length(p)
-                                   > 1000.0) {
+                                   > 1000.0
+                                && nz >= 2) {
                                 fprintf(stderr,
                                     "[dump] PAWN POS: "
                                     "rc=+0x%x "
@@ -1325,7 +1374,7 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                 goto pawn_probe_done;
                             }
                         }
-                        for (lo = 0x100; lo <= 0x300;
+                        for (lo = 0x40; lo <= 0x500;
                              lo += 4) {
                             float fxyz[3];
                             if (!mem_read(&ctx.target,
@@ -1335,10 +1384,15 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                 (double)fxyz[0],
                                 (double)fxyz[1],
                                 (double)fxyz[2]);
+                            int nz = 0;
+                            if (fabs(p.x) > 10.0) nz++;
+                            if (fabs(p.y) > 10.0) nz++;
+                            if (fabs(p.z) > 10.0) nz++;
                             if (vec3_finite(p)
                                 && vec3_plausible(p, 2e7)
                                 && vec3_length(p)
-                                   > 1000.0) {
+                                   > 1000.0
+                                && nz >= 2) {
                                 fprintf(stderr,
                                     "[dump] PAWN POS "
                                     "(float): "
@@ -1358,7 +1412,8 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                     }
                     fprintf(stderr,
                         "[dump] pawn: no position "
-                        "found in RC scan\n");
+                        "found (%d RC candidates)\n",
+                        rc_cand);
                     pawn_probe_done:;
                 }
 

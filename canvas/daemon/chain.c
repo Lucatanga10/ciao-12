@@ -1333,6 +1333,12 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
     }
     if (pa_num <= 0 || pa_num > 200) return 0;
 
+    int diag_ps = 0;
+    int handles_tried = 0;
+    int resolved_ok = 0;
+    int rc_ok = 0;
+    int pos_ok = 0;
+
     for (i = 0; i < pa_num && count < capacity; i++) {
         uint64_t ps = 0;
         uint64_t pawn = 0;
@@ -1346,7 +1352,8 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
         }
         if (ps == 0 || !mem_ptr_plausible(ps)) continue;
 
-        for (ps_off = 0x200; ps_off <= 0x400; ps_off += 8) {
+        bool found_handle = false;
+        for (ps_off = 0x100; ps_off <= 0x600; ps_off += 8) {
             uint64_t handle = 0;
             uint32_t lo, hi;
             mem_read_u64(&ctx->target, ps + ps_off, &handle);
@@ -1356,22 +1363,59 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
             if (lo < 2 || lo > 500000) continue;
             if (hi != lo && hi != 0) continue;
 
+            handles_tried++;
+
             if (!chain_resolve_fobjectptr(ctx, guobj_objects,
                                           guobj_item_size,
                                           handle, &pawn,
                                           direct)) {
+                if (diag_ps < 3) {
+                    fprintf(stderr,
+                        "[coll] PS[%d]+0x%x "
+                        "h=0x%llx resolve fail\n",
+                        i, ps_off,
+                        (unsigned long long)handle);
+                }
                 continue;
             }
-            if (pawn == skip_actor) continue;
+            resolved_ok++;
+            if (pawn == skip_actor) {
+                found_handle = true;
+                if (diag_ps < 3) {
+                    fprintf(stderr,
+                        "[coll] PS[%d]+0x%x "
+                        "h=0x%llx = self\n",
+                        i, ps_off,
+                        (unsigned long long)handle);
+                }
+                break;
+            }
             if (!mem_looks_like_uobject(&ctx->target, pawn)) {
                 continue;
             }
 
             if (!mem_read_ptr(&ctx->target,
                               pawn + rc_off, &rc)) {
+                if (diag_ps < 3) {
+                    fprintf(stderr,
+                        "[coll] PS[%d]+0x%x "
+                        "pawn=0x%llx rc read fail\n",
+                        i, ps_off,
+                        (unsigned long long)pawn);
+                }
                 continue;
             }
-            if (rc == 0 || !mem_ptr_plausible(rc)) continue;
+            if (rc == 0 || !mem_ptr_plausible(rc)) {
+                if (diag_ps < 3) {
+                    fprintf(stderr,
+                        "[coll] PS[%d]+0x%x "
+                        "pawn rc=0x%llx bad\n",
+                        i, ps_off,
+                        (unsigned long long)rc);
+                }
+                continue;
+            }
+            rc_ok++;
 
             if (loc_float) {
                 float fxyz[3];
@@ -1394,6 +1438,17 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
             if (!vec3_finite(pos)) continue;
             if (!vec3_plausible(pos, OJBS_WORLD_LIMIT)) continue;
             if (vec3_length(pos) < 100.0) continue;
+            pos_ok++;
+
+            if (diag_ps < 3) {
+                fprintf(stderr,
+                    "[coll] PS[%d]+0x%x "
+                    "pawn=0x%llx "
+                    "pos=(%.0f,%.0f,%.0f)\n",
+                    i, ps_off,
+                    (unsigned long long)pawn,
+                    pos.x, pos.y, pos.z);
+            }
 
             {
                 double dist = vec3_length(
@@ -1406,9 +1461,23 @@ int chain_collect_via_guobj(const chain_ctx *ctx,
                 out[count].distance = dist;
                 count++;
             }
+            found_handle = true;
             break;
         }
+        if (diag_ps < 3 && !found_handle) {
+            fprintf(stderr,
+                "[coll] PS[%d] no valid handle "
+                "in 0x100..0x600\n", i);
+        }
+        diag_ps++;
     }
+
+    fprintf(stderr,
+        "[coll] pa=%d htried=%d "
+        "resolved=%d rc=%d pos=%d "
+        "=> %d\n",
+        pa_num, handles_tried,
+        resolved_ok, rc_ok, pos_ok, count);
 
     return count;
 }
