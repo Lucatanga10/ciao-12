@@ -1296,6 +1296,155 @@ static int run_live(const cli_options *options, const ue_offsets *off)
                                                         }
                                                     }
                                                 }
+                                                /* Phase 2: backward scan may
+                                                   have overshot into heap
+                                                   noise. Forward-scan from
+                                                   cb to find where the real
+                                                   chunk starts. */
+                                                if (!guobj_found
+                                                    && pidx < 65536
+                                                    && pidx >= 2
+                                                    && gs > (int)pidx
+                                                       + 10) {
+                                                    int ncand =
+                                                        gs
+                                                        - (int)pidx;
+                                                    fprintf(stderr,
+                                                        "[dump] "
+                                                        "pawn scan:"
+                                                        " %d cand "
+                                                        "from cb+"
+                                                        "0x%llx\n",
+                                                        ncand,
+                                                        (unsigned
+                                                        long long)
+                                                        ((uint64_t)
+                                                        pidx * S));
+                                                    uint64_t sa =
+                                                        cb
+                                                        + (uint64_t)
+                                                        pidx * S;
+                                                    int chk = 0;
+                                                    while (sa < hit
+                                                           && !guobj_found
+                                                           && chk
+                                                           < 500) {
+                                                        uint64_t sv
+                                                            = 0;
+                                                        if (!mem_read_u64(
+                                                                &ctx
+                                                                .target,
+                                                                sa,
+                                                                &sv)) {
+                                                            sa += S;
+                                                            continue;
+                                                        }
+                                                        if (sv == 0
+                                                            || !mem_ptr_plausible(
+                                                                sv)) {
+                                                            sa += S;
+                                                            continue;
+                                                        }
+                                                        if (!mem_looks_like_uobject(
+                                                                &ctx
+                                                                .target,
+                                                                sv)) {
+                                                            sa += S;
+                                                            continue;
+                                                        }
+                                                        chk++;
+                                                        /* verify 10
+                                                           neighbors */
+                                                        int vok = 0;
+                                                        int vi;
+                                                        for (vi = 1;
+                                                             vi <= 10;
+                                                             vi++) {
+                                                            uint64_t
+                                                                na2 =
+                                                                sa
+                                                                + (uint64_t)
+                                                                vi * S;
+                                                            uint64_t
+                                                                nv2
+                                                                = 0;
+                                                            if (!mem_read_u64(
+                                                                    &ctx
+                                                                    .target,
+                                                                    na2,
+                                                                    &nv2))
+                                                                continue;
+                                                            if (nv2
+                                                                == 0)
+                                                            { vok++;
+                                                              continue;
+                                                            }
+                                                            if (mem_ptr_plausible(
+                                                                    nv2)
+                                                                && mem_looks_like_uobject(
+                                                                    &ctx
+                                                                    .target,
+                                                                    nv2))
+                                                                vok++;
+                                                        }
+                                                        if (vok < 5) {
+                                                            sa += S;
+                                                            continue;
+                                                        }
+                                                        uint64_t
+                                                            ncb =
+                                                            sa
+                                                            - (uint64_t)
+                                                            pidx * S;
+                                                        int ngw =
+                                                            (int)(
+                                                            (hit
+                                                            - ncb)
+                                                            / (uint64_t)
+                                                            S);
+                                                        fprintf(
+                                                            stderr,
+                                                            "[dump]"
+                                                            " PAWN"
+                                                            " (scan)"
+                                                            ": 0x"
+                                                            "%llx "
+                                                            "base=0x"
+                                                            "%llx "
+                                                            "gw=%d "
+                                                            "chk=%d"
+                                                            "\n",
+                                                            (unsigned
+                                                            long long)
+                                                            sv,
+                                                            (unsigned
+                                                            long long)
+                                                            ncb,
+                                                            ngw,
+                                                            chk);
+                                                        real_pawn
+                                                            = sv;
+                                                        guobj_found
+                                                            = true;
+                                                        guobj_direct
+                                                            = true;
+                                                        guobj_item_size
+                                                            = S;
+                                                        guobj_objects
+                                                            = ncb;
+                                                    }
+                                                    if (!guobj_found)
+                                                        fprintf(
+                                                            stderr,
+                                                            "[dump]"
+                                                            " pawn"
+                                                            " scan:"
+                                                            " miss"
+                                                            " (%d"
+                                                            " chk)"
+                                                            "\n",
+                                                            chk);
+                                                }
                                                 hf = true;
                                             }
                                         }
